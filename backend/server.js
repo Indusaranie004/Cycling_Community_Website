@@ -15,12 +15,12 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // Routes
-//app.use('/api/routes', require('./routes/routes'));
-
-// Test route
-app.get('/', (req, res) => {
-  res.json({ message: 'Cycling Community API is running' });
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
 });
+
+app.use('/api/routes', require('./routes/routeRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
