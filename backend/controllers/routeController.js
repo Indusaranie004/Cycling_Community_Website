@@ -180,5 +180,43 @@ const updateRoute = async (req, res) => {
   }
 };
 
+// DELETE Route
+const deleteRoute = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = "test-user-123"; // Replace with Clerk userId later
+    const userRole = "user"; // Replace with actual role from Clerk later (user/admin)
+
+    // Find the route
+    const route = await Route.findById(id);
+
+    if (!route) {
+      return res.status(404).json({ error: 'Route not found' });
+    }
+
+    // Authorization check: owner OR admin
+    const isOwner = route.userId === userId;
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ 
+        error: 'Forbidden: You do not have permission to delete this route' 
+      });
+    }
+
+    // Delete the route
+    await Route.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: 'Route deleted successfully',
+      deletedRouteId: id
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Export all functions
-module.exports = { createRoute, getRoutes, updateRoute };
+module.exports = { createRoute, getRoutes, updateRoute, deleteRoute };
+
