@@ -7,6 +7,12 @@ const createRoute = async (req, res) => {
     const { name, coordinates, isPublic } = req.body;
     const userId = req.userId; // From requireAuth middleware
 
+    // Check duplicate name for same user
+    const existingRoute = await Route.findOne({ userId, name });
+    if (existingRoute) {
+    return res.status(409).json({ error: 'You already have a route with this name' });
+    }
+
     // Call Mapbox Directions API
     const directionsResponse = await axios.get(
       `https://api.mapbox.com/directions/v5/mapbox/cycling/${coordinates.map(c => c.join(',')).join(';')}`,
@@ -103,6 +109,25 @@ const updateRoute = async (req, res) => {
   try {
     const existingRoute = req.route; // From checkRouteOwnership middleware
     const { name, coordinates, isPublic } = req.body;
+
+    //Debugging logs for duplicate name check
+    if (name && name !== existingRoute.name) {
+  console.log('Checking duplicate for userId:', req.userId, 'name:', name);
+  const duplicateName = await Route.findOne({ userId: req.userId, name });
+  console.log('Duplicate found:', duplicateName);
+  if (duplicateName) {
+    return res.status(409).json({ error: 'You already have a route with this name' });
+  }
+}
+
+    // Check duplicate name
+    if (name && name !== existingRoute.name) {
+        const duplicateName = await Route.findOne({ userId: req.userId, name });
+        if (duplicateName) {
+            return res.status(409).json({ error: 'You already have a route with this name' });
+}
+
+}
 
     let updateData = {};
     if (name !== undefined) updateData.name = name;

@@ -2,17 +2,18 @@ const express = require('express');
 const router = express.Router();
 const { createRoute, getRoutes, updateRoute, deleteRoute } = require('../controllers/routeController');
 const { requireAuth, verifyUserIdMatch, checkRouteOwnership } = require('../middleware/auth/authRoute');
+const { validateCreateRoute, validateUpdateRoute, validateRouteId } = require('../middleware/validation/validateRoute');
 
-// CREATE Route (requires authentication)
-router.post('/newRoute', requireAuth, createRoute);
+// CREATE
+router.post('/newRoute', requireAuth, validateCreateRoute, createRoute);
 
-// READ Routes (verify userId if provided in query)
+// READ
 router.get('/viewRoutes', requireAuth, verifyUserIdMatch, getRoutes);
 
-// UPDATE Route (requires ownership)
-router.put('/updateRoute/:id', requireAuth, checkRouteOwnership, updateRoute);
+// UPDATE
+router.put('/updateRoute/:id', requireAuth, validateUpdateRoute, checkRouteOwnership, updateRoute);
 
-// DELETE Route (requires ownership)
-router.delete('/deleteRoute/:id', requireAuth, checkRouteOwnership, deleteRoute);
+// DELETE
+router.delete('/deleteRoute/:id', requireAuth, validateRouteId, checkRouteOwnership, deleteRoute);
 
 module.exports = router;
