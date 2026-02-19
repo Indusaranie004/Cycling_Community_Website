@@ -110,16 +110,6 @@ const updateRoute = async (req, res) => {
     const existingRoute = req.route; // From checkRouteOwnership middleware
     const { name, coordinates, isPublic } = req.body;
 
-    //Debugging logs for duplicate name check
-    if (name && name !== existingRoute.name) {
-  console.log('Checking duplicate for userId:', req.userId, 'name:', name);
-  const duplicateName = await Route.findOne({ userId: req.userId, name });
-  console.log('Duplicate found:', duplicateName);
-  if (duplicateName) {
-    return res.status(409).json({ error: 'You already have a route with this name' });
-  }
-}
-
     // Check duplicate name
     if (name && name !== existingRoute.name) {
         const duplicateName = await Route.findOne({ userId: req.userId, name });
