@@ -1,10 +1,9 @@
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid');
 
 const interactionSchema = new mongoose.Schema({
     interactionId: {
         type: String,
-        default: uuidv4,
+        default: () => new mongoose.Types.ObjectId().toString(),
         unique: true
     },
     userId: {
