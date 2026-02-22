@@ -17,7 +17,8 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-validator": "^7.3.1",
-    "mongoose": "^9.2.1"
+    "mongoose": "^9.2.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "jest": "^30.2.0",
@@ -26,6 +27,8 @@
     "supertest": "^7.2.2"
   },
   "jest": {
-  "setupFilesAfterEnv": ["./tests/setup.js"]
+    "setupFilesAfterEnv": [
+      "./tests/setup.js"
+    ]
   }
 }
