@@ -12,6 +12,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/routes', require('./routes/routeRoutes'));
+app.use('/api/community/events', require('./routes/communityEventRoutes'));
+app.use('/api/community/challenges', require('./routes/communityChallengeRoutes'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
