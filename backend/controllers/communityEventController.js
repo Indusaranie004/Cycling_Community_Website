@@ -98,6 +98,7 @@ const joinCommunityEvent = async (req, res) => {
             communityEvent 
         });
     } catch (err) {
+        console.error('Join event error:', err);
         res.status(500).json({ error: err.message });
     }
 };

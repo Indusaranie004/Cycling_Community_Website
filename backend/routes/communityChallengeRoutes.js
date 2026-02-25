@@ -8,7 +8,8 @@ const {
     updateCommunityChallengeProgress,
     getCommunityChallengeLeaderboard,
     getUserParticipationHistory,
-    checkChallengeEnded
+    checkChallengeEnded,
+    getChallengeParticipants 
 } = require('../controllers/communityChallengeController');
 
 // /api/community/challenges
@@ -17,6 +18,7 @@ router.post('/', createCommunityChallenge);
 
 // /api/community/challenges/:id
 router.get('/:id', getCommunityChallengeById);
+router.get('/:id/participants', getChallengeParticipants); 
 router.get('/:id/leaderboard', getCommunityChallengeLeaderboard);
 router.post('/:id/join', joinCommunityChallenge);
 router.put('/:id/progress', updateCommunityChallengeProgress);

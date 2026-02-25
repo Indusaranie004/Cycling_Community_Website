@@ -204,6 +204,61 @@ describe('Community Challenges API', () => {
         });
     });
 
+
+    // ========================================================================
+    // TEST GROUP: GET Challenge Participants
+    // ========================================================================
+    describe('GET /api/community/challenges/:id/participants', () => {
+        
+        it('should return participants list for a challenge', async () => {
+            // ARRANGE: Create challenge
+            const challenge = await CommunityChallenge.create({
+                userId: 'user123',
+                title: 'Test Challenge',
+                description: 'Test',
+                targetDistance: 100,
+                startDate: '2026-03-01',
+                endDate: '2026-03-31'
+            });
+
+            // ARRANGE: Add 2 participants
+            await CommunityParticipant.create({
+                userId: 'user1',
+                challengeId: challenge.challengeId,
+                progress: 50,
+                status: 'joined'
+            });
+            
+            await CommunityParticipant.create({
+                userId: 'user2',
+                challengeId: challenge.challengeId,
+                progress: 30,
+                status: 'joined'
+            });
+
+            // ACT: Get participants
+            const res = await request(app)
+                .get(`/api/community/challenges/${challenge.challengeId}/participants`);
+
+            // ASSERT: Check response
+            expect(res.statusCode).toBe(200);
+            expect(res.body.challengeId).toBe(challenge.challengeId);
+            expect(res.body.totalParticipants).toBe(2);
+            expect(res.body.participants.length).toBe(2);
+            expect(res.body.participants[0].userId).toBe('user1');
+        });
+
+        it('should return 404 if challenge not found', async () => {
+            // ACT: Try to get participants for non-existent challenge
+            const res = await request(app)
+                .get('/api/community/challenges/CHL-NONEXISTENT123/participants');
+
+            // ASSERT: Check 404 error
+            expect(res.statusCode).toBe(404);
+            expect(res.body.error).toBe('Challenge not found');
+        });
+    });
+
     // ========================================================================
     // TEST GROUP: GET /api/community/challenges/:id/leaderboard (Ranking)
     // ========================================================================

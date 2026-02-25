@@ -137,6 +137,38 @@ const updateCommunityChallengeProgress = async (req, res) => {
     }
 };
 
+
+// GET participants for a specific challenge
+const getChallengeParticipants = async (req, res) => {
+    try {
+        // First, verify the challenge exists
+        const communityChallenge = await CommunityChallenge.findOne({ 
+            challengeId: req.params.id 
+        });
+        
+        if (!communityChallenge) {
+            return res.status(404).json({ error: 'Challenge not found' });
+        }
+
+        // Get all participants for this challenge (exclude cancelled/withdrawn)
+        const participants = await CommunityParticipant.find({
+            challengeId: communityChallenge.challengeId,
+            status: { $ne: 'cancelled' }  // Exclude cancelled participants
+        })
+        .sort({ joinedAt: 1 });  // Sort by who joined first
+
+        res.status(200).json({
+            challengeId: communityChallenge.challengeId,
+            challengeTitle: communityChallenge.title,
+            totalParticipants: participants.length,
+            participants: participants
+        });
+    } catch (err) {
+        console.error('Get challenge participants error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // GET leaderboard for community challenge
 const getCommunityChallengeLeaderboard = async (req, res) => {
     try {
@@ -229,5 +261,6 @@ module.exports = {
     updateCommunityChallengeProgress,
     getCommunityChallengeLeaderboard,
     getUserParticipationHistory,
-    checkChallengeEnded
+    checkChallengeEnded,
+    getChallengeParticipants 
 };

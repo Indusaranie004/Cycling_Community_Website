@@ -35,18 +35,6 @@ const communityParticipantSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Ensure participant is linked to either event OR challenge
-communityParticipantSchema.pre('save', function(next) {
-    if (!this.eventId && !this.challengeId) {
-        return next(new Error('Participant must be associated with either an event or a challenge'));
-    }
-    
-    if (this.eventId && this.challengeId) {
-        return next(new Error('Participant cannot be associated with both event and challenge'));
-    }
-    
-    next();
-});
 
 // Indexes for faster queries
 communityParticipantSchema.index({ userId: 1, status: 1 });
