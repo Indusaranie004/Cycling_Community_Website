@@ -1,10 +1,18 @@
+require('dotenv').config();
 const request = require('supertest');
 const app = require('../app');
+const jwt = require('jsonwebtoken');
+
+// Generate test token using real JWT_SECRET
+const testToken = jwt.sign(
+  { userId: 'test-user-123', role: 'user' },
+  process.env.JWT_SECRET,
+  { expiresIn: '1d' }
+);
 
 // Mock Mapbox API calls
 jest.mock('axios', () => ({
   get: jest.fn((url) => {
-    // Mock Directions API
     if (url.includes('directions')) {
       return Promise.resolve({
         data: {
@@ -15,7 +23,6 @@ jest.mock('axios', () => ({
         }
       });
     }
-    // Mock Geocoding API
     if (url.includes('geocoding')) {
       return Promise.resolve({
         data: {
@@ -33,6 +40,7 @@ describe('CREATE Route', () => {
   test('Successfully creates route with valid data', async () => {
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
@@ -45,6 +53,7 @@ describe('CREATE Route', () => {
   test('Rejects missing name', async () => {
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
         isPublic: true
@@ -56,6 +65,7 @@ describe('CREATE Route', () => {
   test('Rejects less than 2 coordinates', async () => {
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28]],
@@ -68,6 +78,7 @@ describe('CREATE Route', () => {
   test('Rejects missing visibility status', async () => {
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]]
@@ -77,18 +88,18 @@ describe('CREATE Route', () => {
   });
 
   test('Rejects duplicate name for same user', async () => {
-    // Create first route
     await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
         isPublic: true
       });
 
-    // Try to create duplicate
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
@@ -103,20 +114,23 @@ describe('CREATE Route', () => {
 describe('READ Routes', () => {
   test('Returns all public routes when no userId provided', async () => {
     const res = await request(app)
-      .get('/api/routes/viewRoutes?isPublic=true');
+      .get('/api/routes/viewRoutes?isPublic=true')
+      .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(200);
     expect(res.body.routes).toBeDefined();
   });
 
   test('Returns own routes with correct userId', async () => {
     const res = await request(app)
-      .get('/api/routes/viewRoutes?userId=test-user-123');
+      .get('/api/routes/viewRoutes?userId=test-user-123')
+      .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(200);
   });
 
   test('Returns only public routes when viewing another users routes', async () => {
     const res = await request(app)
-      .get('/api/routes/viewRoutes?userId=test-user-456');
+      .get('/api/routes/viewRoutes?userId=test-user-456')
+      .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(200);
     res.body.routes.forEach(route => {
       expect(route.isPublic).toBe(true);
@@ -131,6 +145,7 @@ describe('UPDATE Route', () => {
   beforeEach(async () => {
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
@@ -142,6 +157,7 @@ describe('UPDATE Route', () => {
   test('Successfully updates name only', async () => {
     const res = await request(app)
       .put(`/api/routes/updateRoute/${routeId}`)
+      .set('Authorization', `Bearer ${testToken}`)
       .send({ name: 'Evening Ride' });
     expect(res.statusCode).toBe(200);
     expect(res.body.route.name).toBe('Evening Ride');
@@ -150,6 +166,7 @@ describe('UPDATE Route', () => {
   test('Successfully updates visibility only', async () => {
     const res = await request(app)
       .put(`/api/routes/updateRoute/${routeId}`)
+      .set('Authorization', `Bearer ${testToken}`)
       .send({ isPublic: false });
     expect(res.statusCode).toBe(200);
     expect(res.body.route.isPublic).toBe(false);
@@ -158,6 +175,7 @@ describe('UPDATE Route', () => {
   test('Rejects empty body', async () => {
     const res = await request(app)
       .put(`/api/routes/updateRoute/${routeId}`)
+      .set('Authorization', `Bearer ${testToken}`)
       .send({});
     expect(res.statusCode).toBe(400);
     expect(res.body.errors).toContain('At least one field must be provided for update');
@@ -166,24 +184,25 @@ describe('UPDATE Route', () => {
   test('Rejects invalid MongoDB ID', async () => {
     const res = await request(app)
       .put('/api/routes/updateRoute/invalidid123')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({ name: 'New Name' });
     expect(res.statusCode).toBe(400);
     expect(res.body.errors).toContain('Invalid route ID format');
   });
 
   test('Rejects duplicate name for same user', async () => {
-    // Create second route
     await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Evening Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
         isPublic: true
       });
 
-    // Try to rename Morning Ride to Evening Ride
     const res = await request(app)
       .put(`/api/routes/updateRoute/${routeId}`)
+      .set('Authorization', `Bearer ${testToken}`)
       .send({ name: 'Evening Ride' });
     expect(res.statusCode).toBe(409);
     expect(res.body.error).toBe('You already have a route with this name');
@@ -192,6 +211,7 @@ describe('UPDATE Route', () => {
   test('Allows same name when not changed', async () => {
     const res = await request(app)
       .put(`/api/routes/updateRoute/${routeId}`)
+      .set('Authorization', `Bearer ${testToken}`)
       .send({ name: 'Morning Ride' });
     expect(res.statusCode).toBe(200);
   });
@@ -204,6 +224,7 @@ describe('DELETE Route', () => {
   beforeEach(async () => {
     const res = await request(app)
       .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
       .send({
         name: 'Morning Ride',
         coordinates: [[80.63, 7.28], [80.64, 7.29]],
@@ -214,21 +235,24 @@ describe('DELETE Route', () => {
 
   test('Successfully deletes own route', async () => {
     const res = await request(app)
-      .delete(`/api/routes/deleteRoute/${routeId}`);
+      .delete(`/api/routes/deleteRoute/${routeId}`)
+      .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe('Route deleted successfully');
   });
 
   test('Rejects invalid MongoDB ID', async () => {
     const res = await request(app)
-      .delete('/api/routes/deleteRoute/invalidid123');
+      .delete('/api/routes/deleteRoute/invalidid123')
+      .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(400);
     expect(res.body.errors).toContain('Invalid route ID format');
   });
 
   test('Returns 404 for non-existent route', async () => {
     const res = await request(app)
-      .delete('/api/routes/deleteRoute/000000000000000000000000');
+      .delete('/api/routes/deleteRoute/000000000000000000000000')
+      .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(404);
     expect(res.body.error).toBe('Route not found');
   });
