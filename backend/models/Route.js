@@ -22,6 +22,17 @@ const routeSchema = new mongoose.Schema({
     type: [[Number]],
     required: true
   },
+  startPoint: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],  // [longitude, latitude]
+      default: [0, 0]
+    }
+  },
   distance: {
     type: Number,
     required: true
@@ -35,5 +46,8 @@ const routeSchema = new mongoose.Schema({
     default: false
   }
 }, { timestamps: true });
+
+// Geospatial index for location-based queries
+routeSchema.index({ startPoint: '2dsphere' });
 
 module.exports = mongoose.model('Route', routeSchema);

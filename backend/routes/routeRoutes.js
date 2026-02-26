@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createRoute, getRoutes, updateRoute, deleteRoute } = require('../controllers/routeController');
+const { createRoute, getRoutes, updateRoute, deleteRoute, getNearbyRoutes } = require('../controllers/routeController');
 const { requireAuth, verifyUserIdMatch, checkRouteOwnership } = require('../middleware/auth/authRoute');
 const { validateCreateRoute, validateUpdateRoute, validateRouteId } = require('../middleware/validation/validateRoute');
 
@@ -9,6 +9,9 @@ router.post('/newRoute', requireAuth, validateCreateRoute, createRoute);
 
 // READ
 router.get('/viewRoutes', requireAuth, verifyUserIdMatch, getRoutes);
+
+// NEARBY (new feature)
+router.get('/nearby', requireAuth, getNearbyRoutes);
 
 // UPDATE
 router.put('/updateRoute/:id', requireAuth, validateUpdateRoute, checkRouteOwnership, updateRoute);
