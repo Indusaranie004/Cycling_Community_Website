@@ -7,7 +7,7 @@ const processExpiredHazards = async () => {
     try {
         const now = new Date();
 
-        // Find all active hazards that have passed their expiry time
+        // to find all active hazards that have passed their expiry time
         const expiredHazards = await Interaction.find({
             intType: 'hazard',
             isActive: true,
@@ -19,11 +19,11 @@ const processExpiredHazards = async () => {
         console.log(`[HazardExpiryJob] Found ${expiredHazards.length} expired hazard(s)`);
 
         for (const hazard of expiredHazards) {
-            // 1. Deactivate the hazard
+            // deactivate the hazard
             hazard.isActive = false;
             await hazard.save();
 
-            // 2. Skip FCM if no token stored
+            // skip fcm if no token stored
             if (!hazard.fcmToken) {
                 console.warn(`[HazardExpiryJob] No FCM token for hazard ${hazard._id}, skipping notification`);
                 continue;
@@ -34,7 +34,7 @@ const processExpiredHazards = async () => {
                 ? `Your hazard report "${hazard.intDescription}" has expired and is now inactive.`
                 : 'One of your hazard reports has expired and is now inactive.';
 
-            // 3. Send FCM notification
+            // send fcm notification
             let notificationStatus = 'sent';
             try {
                 await admin.messaging().send({
@@ -51,7 +51,7 @@ const processExpiredHazards = async () => {
                 notificationStatus = 'failed';
             }
 
-            // 4. Store notification record regardless of FCM success/failure
+            // store notification record regardless of FCM success/failure
             await Notification.create({
                 userId: hazard.userId,
                 interactionId: hazard._id.toString(),
@@ -67,7 +67,7 @@ const processExpiredHazards = async () => {
 };
 
 const startHazardExpiryJob = () => {
-    // Runs every minute
+    // runs every minute
     cron.schedule('* * * * *', processExpiredHazards);
     console.log('✅ Hazard expiry job scheduled');
 };

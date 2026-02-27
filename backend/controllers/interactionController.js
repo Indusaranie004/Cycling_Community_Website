@@ -1,6 +1,6 @@
 const Interaction = require('../models/InteractionModel');
 
-// GET all interactions
+// get all interactions
 const getAllInteractions = async (req, res) => {
     try {
         const { userId, routeId, intType, isActive } = req.query;
@@ -18,7 +18,7 @@ const getAllInteractions = async (req, res) => {
     }
 };
 
-// GET single interaction by ID
+// get interaction by ID
 const getInteractionById = async (req, res) => {
     try {
         const interaction = await Interaction.findById(req.params.id);
@@ -29,16 +29,15 @@ const getInteractionById = async (req, res) => {
     }
 };
 
-// POST create new interaction
+// create new interaction
 const createInteraction = async (req, res) => {
     try {
         const {
             userId, routeId, intLatitude, intLongitude,
             intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime
+            severityLevel, intImgUrl, expiryTime, fcmToken 
         } = req.body;
 
-        // Validation: hazards need severity + location, feedback needs a rating
         if (intType === 'hazard' && !severityLevel) {
             return res.status(400).json({ error: 'severityLevel is required for hazard interactions' });
         }
@@ -49,7 +48,7 @@ const createInteraction = async (req, res) => {
         const interaction = await Interaction.create({
             userId, routeId, intLatitude, intLongitude,
             intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime
+            severityLevel, intImgUrl, expiryTime, fcmToken  
         });
 
         res.status(201).json(interaction);
@@ -61,7 +60,7 @@ const createInteraction = async (req, res) => {
     }
 };
 
-// PATCH update interaction (partial update)
+// update interaction (partial update)
 const updateInteraction = async (req, res) => {
     try {
         const interaction = await Interaction.findByIdAndUpdate(
@@ -79,7 +78,7 @@ const updateInteraction = async (req, res) => {
     }
 };
 
-// PATCH deactivate interaction (soft delete)
+//deactivate interaction (soft delete)
 const deactivateInteraction = async (req, res) => {
     try {
         const interaction = await Interaction.findByIdAndUpdate(
@@ -94,7 +93,7 @@ const deactivateInteraction = async (req, res) => {
     }
 };
 
-// DELETE permanently remove interaction
+// permanently remove interaction
 const deleteInteraction = async (req, res) => {
     try {
         const interaction = await Interaction.findByIdAndDelete(req.params.id);
