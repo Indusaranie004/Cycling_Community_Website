@@ -12,6 +12,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/routes', require('./routes/routeRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
