@@ -1,5 +1,7 @@
 require('dotenv').config();
 const request = require('supertest');
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
 const app = require('../app');
 const jwt = require('jsonwebtoken');
 
@@ -9,6 +11,16 @@ const testToken = jwt.sign(
   process.env.JWT_SECRET,
   { expiresIn: '1d' }
 );
+
+// Generate test token
+const testToken = jwt.sign(
+  { userId: 'test-user-123', role: 'user' },
+  process.env.JWT_SECRET,
+  { expiresIn: '1d' }
+);
+
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
+console.log('testToken:', testToken);
 
 // Mock Mapbox API calls
 jest.mock('axios', () => ({
@@ -255,5 +267,121 @@ describe('DELETE Route', () => {
       .set('Authorization', `Bearer ${testToken}`);
     expect(res.statusCode).toBe(404);
     expect(res.body.error).toBe('Route not found');
+  });
+});
+
+// ==================== NEARBY ====================
+describe('NEARBY Routes', () => {
+  beforeEach(async () => {
+    // Create a test route for nearby search
+    await request(app)
+      .post('/api/routes/newRoute')
+      .set('Authorization', `Bearer ${testToken}`)
+      .send({
+        name: 'Nearby Test Route',
+        coordinates: [[80.6337, 7.2906], [80.6350, 7.2920]],
+        isPublic: true
+      });
+  });
+
+  test('Successfully returns nearby public routes with valid parameters', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=80.6337&radius=5000')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe('Nearby routes retrieved successfully');
+    expect(res.body.routes).toBeDefined();
+    expect(Array.isArray(res.body.routes)).toBe(true);
+  });
+
+  test('Returns only public routes', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=80.6337')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(200);
+    res.body.routes.forEach(route => {
+      expect(route.isPublic).toBe(true);
+    });
+  });
+
+  test('Uses default radius of 5000m when not specified', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=80.6337')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.routes).toBeDefined();
+  });
+
+  test('Rejects missing lat parameter', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lng=80.6337')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Latitude (lat) is required');
+  });
+
+  test('Rejects missing lng parameter', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Longitude (lng) is required');
+  });
+
+  test('Rejects invalid lat out of range (too high)', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=91&lng=80.6337')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Latitude must be a number between -90 and 90');
+  });
+
+  test('Rejects invalid lat out of range (too low)', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=-91&lng=80.6337')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Latitude must be a number between -90 and 90');
+  });
+
+  test('Rejects invalid lng out of range (too high)', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=181')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Longitude must be a number between -180 and 180');
+  });
+
+  test('Rejects invalid lng out of range (too low)', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=-181')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Longitude must be a number between -180 and 180');
+  });
+
+  test('Rejects negative radius', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=80.6337&radius=-500')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors).toContain('Radius must be a positive number');
+  });
+
+  test('Accepts different radius values', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=7.2906&lng=80.6337&radius=10000')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.routes).toBeDefined();
+  });
+
+  test('Returns empty array when no routes nearby', async () => {
+    const res = await request(app)
+      .get('/api/routes/nearby?lat=6.9271&lng=79.8612&radius=100')
+      .set('Authorization', `Bearer ${testToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.count).toBe(0);
+    expect(res.body.routes).toEqual([]);
   });
 });

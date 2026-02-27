@@ -10,7 +10,7 @@ const createRoute = async (req, res) => {
     // Check duplicate name for same user
     const existingRoute = await Route.findOne({ userId, name });
     if (existingRoute) {
-    return res.status(409).json({ error: 'You already have a route with this name' });
+      return res.status(409).json({ error: 'You already have a route with this name' });
     }
 
     // Call Mapbox Directions API
@@ -45,11 +45,15 @@ const createRoute = async (req, res) => {
     const startLocation = startGeocode.data.features[0]?.place_name || 'Unknown';
     const endLocation = endGeocode.data.features[0]?.place_name || 'Unknown';
 
-    // Save to MongoDB
+    // Save to MongoDB - with startPoint
     const newRoute = new Route({
       userId,
       name,
       coordinates,
+      startPoint: {
+        type: 'Point',
+        coordinates: coordinates[0]  // [longitude, latitude]
+      },
       distance,
       estimatedTime,
       startLocation,
@@ -112,12 +116,11 @@ const updateRoute = async (req, res) => {
 
     // Check duplicate name
     if (name && name !== existingRoute.name) {
-        const duplicateName = await Route.findOne({ userId: req.userId, name });
-        if (duplicateName) {
-            return res.status(409).json({ error: 'You already have a route with this name' });
-}
-
-}
+      const duplicateName = await Route.findOne({ userId: req.userId, name });
+      if (duplicateName) {
+        return res.status(409).json({ error: 'You already have a route with this name' });
+      }
+    }
 
     let updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -147,6 +150,10 @@ const updateRoute = async (req, res) => {
       );
 
       updateData.coordinates = coordinates;
+      updateData.startPoint = {
+        type: 'Point',
+        coordinates: coordinates[0]  // Update start point too
+      };
       updateData.distance = route.distance;
       updateData.estimatedTime = route.duration / 60;
       updateData.startLocation = startGeocode.data.features[0]?.place_name || 'Unknown';
@@ -186,4 +193,39 @@ const deleteRoute = async (req, res) => {
   }
 };
 
-module.exports = { createRoute, getRoutes, updateRoute, deleteRoute };
+// NEARBY Routes
+const getNearbyRoutes = async (req, res) => {
+  try {
+    const { lat, lng, radius = 5000 } = req.query;
+    // radius in meters, default 5km
+
+    if (!lat || !lng) {
+      return res.status(400).json({ 
+        error: 'lat and lng query parameters are required' 
+      });
+    }
+
+    const routes = await Route.find({
+      isPublic: true,
+      startPoint: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+          },
+          $maxDistance: parseFloat(radius)
+        }
+      }
+    });
+
+    res.status(200).json({
+      message: 'Nearby routes retrieved successfully',
+      count: routes.length,
+      routes
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { createRoute, getRoutes, updateRoute, deleteRoute, getNearbyRoutes };
