@@ -1,0 +1,373 @@
+{
+  "info": {
+    "_postman_id": "2cfa65f3-d8df-499f-8192-f78785d6aa84",
+    "name": "hazard-and-feedback",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52734768",
+    "_collection_link": "https://go.postman.co/collection/52753812-2cfa65f3-d8df-499f-8192-f78785d6aa84?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Get all interactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/interactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get interaction by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/interactions/699ad867d967e34d5f1008a3",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions",
+            "699ad867d967e34d5f1008a3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Filter by userId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/interactions?userId=user123",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "user123"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Filter by type",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/interactions?intType=hazard",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions"
+          ],
+          "query": [
+            {
+              "key": "intType",
+              "value": "hazard"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Filter by active status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/interactions?isActive=true",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions"
+          ],
+          "query": [
+            {
+              "key": "isActive",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create hazard",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"userId\": \"user123\",\r\n    \"routeId\": \"route456\",\r\n    \"intType\": \"hazard\",\r\n    \"intDescription\": \"Large pothole\",\r\n    \"severityLevel\": \"high\",\r\n    \"fcmToken\": \"test_token_123\",\r\n    \"expiryTime\": \"2024-01-01T00:00:00.000Z\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/interactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Feedback",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"userId\": \"user123\",\r\n    \"routeId\": \"route456\",\r\n    \"intLatitude\": 6.9271,\r\n    \"intLongitude\": 79.8612,\r\n    \"intType\": \"feedback\",\r\n    \"intDescription\": \"Smooth route!\",\r\n    \"intRating\": 4\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/interactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Partial Update",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"severityLevel\": \"low\",\r\n    \"intDescription\": \"Pothole has been partially filled\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/interactions/69a13d01d01e5cf0b4d6db9b",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions",
+            "69a13d01d01e5cf0b4d6db9b"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Deactivate Interaction",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/interactions/69a138aad01e5cf0b4d6db7f/deactivate",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "interactions",
+            "69a138aad01e5cf0b4d6db7f",
+            "deactivate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get all notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/notifications",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "notifications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Filter notifications by userId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/notifications?userId=user123",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "notifications"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "user123"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Manually trigger expiry job",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/notifications/trigger-expiry-check",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "notifications",
+            "trigger-expiry-check"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Full update notification",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"status\": \"failed\",\r\n    \"title\": \"Hazard Expired\",\r\n    \"body\": \"Your hazard report has expired\",\r\n    \"fcmToken\": \"new_token_here\",\r\n    \"userId\": \"user123\",\r\n    \"interactionId\": \"abc123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/notifications/:id",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "notifications",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete notification",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/notifications/:id",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "notifications",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,495 @@
+{
+  "info": {
+    "_postman_id": "eac49820-0514-4bd6-9fa9-9ad9f2b3c81d",
+    "name": "community-hub",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52734768",
+    "_collection_link": "https://go.postman.co/collection/43290184-eac49820-0514-4bd6-9fa9-9ad9f2b3c81d?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "New Request",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "GET All Events",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/events",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Event",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"user126\",\r\n  \"title\": \"Healthy Ride\",\r\n  \"description\": \"Easy 10km route\",\r\n  \"location\": \"Kaduwela\",\r\n  \"eventDate\": \"2026-03-19\",\r\n  \"eventTime\": \"04:30\",\r\n  \"maxParticipants\": 20\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/events",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET Single Event",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/events/EVT-1771941172491-K1MPSZJK9",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events",
+            "EVT-1771941172491-K1MPSZJK9"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Join Event",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"user123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/events/EVT-1772040383550-0A5CLT5EE/join",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events",
+            "EVT-1772040383550-0A5CLT5EE",
+            "join"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET Event Participants",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/events/EVT-1772040383550-0A5CLT5EE/participants",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events",
+            "EVT-1772040383550-0A5CLT5EE",
+            "participants"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Withdraw from Event",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"user124\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/events/EVT-1771941172491-K1MPSZJK9/withdraw",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events",
+            "EVT-1771941172491-K1MPSZJK9",
+            "withdraw"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Event",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"Updated Event Title\",\r\n  \"maxParticipants\": 20\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/events/EVT-1771941172491-K1MPSZJK9",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events",
+            "EVT-1771941172491-K1MPSZJK9"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Event",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/events/EVT-1771941010850-DZ0ES1N2P",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "events",
+            "EVT-1771941010850-DZ0ES1N2P"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Challenges",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Challenge",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"user126\",\r\n  \"title\": \"May 30km Challenge\",\r\n  \"description\": \"Cycle 30km in May\",\r\n  \"targetDistance\": 100,\r\n  \"startDate\": \"2026-05-12\",\r\n  \"endDate\": \"2026-05-15\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Single Challenge",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges/CHL-1771939486065-ZGQIP0W59",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges",
+            "CHL-1771939486065-ZGQIP0W59"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Join Challenge",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"user123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges/CHL-1771939486065-ZGQIP0W59/join",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges",
+            "CHL-1771939486065-ZGQIP0W59",
+            "join"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Progress",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"user123\",\r\n  \"distance\": 15\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges/CHL-1771939486065-ZGQIP0W59/progress ",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges",
+            "CHL-1771939486065-ZGQIP0W59",
+            "progress "
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Leaderboard",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges/CHL-1771939486065-ZGQIP0W59/leaderboard",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges",
+            "CHL-1771939486065-ZGQIP0W59",
+            "leaderboard"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Challenge Participants",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges/CHL-1771939486065-ZGQIP0W59/participants",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges",
+            "CHL-1771939486065-ZGQIP0W59",
+            "participants"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Challenge Ended",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/community/challenges/CHL-1771939486065-ZGQIP0W59/check-ended",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "community",
+            "challenges",
+            "CHL-1771939486065-ZGQIP0W59",
+            "check-ended"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

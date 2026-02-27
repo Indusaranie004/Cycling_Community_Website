@@ -1,0 +1,293 @@
+{
+  "info": {
+    "_postman_id": "1d54dfa1-ee2c-47b4-baf2-8d32ef9af847",
+    "name": "route-planning",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52734768",
+    "_collection_link": "https://go.postman.co/collection/40379224-1d54dfa1-ee2c-47b4-baf2-8d32ef9af847?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "create",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Green street\",\n  \"coordinates\": [\n    [80.6310, 7.3000],\n    [80.6450, 7.3740],\n    [80.6200, 7.3500]\n  ],\n  \"isPublic\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/routes/newRoute",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "routes",
+            "newRoute"
+          ]
+        },
+        "description": "Creates a new cycling route. Calculates distance/time via Mapbox. Requires Bearer Token."
+      },
+      "response": []
+    },
+    {
+      "name": "getPublicRoutes",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/routes/viewRoutes",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "routes",
+            "viewRoutes"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Returns all public routes from all users. Requires Bearer Token."
+      },
+      "response": []
+    },
+    {
+      "name": "getOtherPublicRoutes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/api/routes/viewRoutes?userId=69a029cee89a88a345396b76",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "routes",
+            "viewRoutes"
+          ],
+          "query": [
+            {
+              "key": "isPublic",
+              "value": "false",
+              "disabled": true
+            },
+            {
+              "key": "userId",
+              "value": "test-user-123",
+              "disabled": true
+            },
+            {
+              "key": "userId",
+              "value": "69a029cee89a88a345396b76"
+            }
+          ]
+        },
+        "description": "Returns only public routes of a specific user. Pass target `userId` as query param. Requires Bearer Token."
+      },
+      "response": []
+    },
+    {
+      "name": "getUserRoutes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/api/routes/viewRoutes?userId={{userId}}",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "routes",
+            "viewRoutes"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "userId",
+              "value": "{{userId}}"
+            }
+          ]
+        },
+        "description": "Returns all routes (public + private) of the logged-in user. Requires Bearer Token."
+      },
+      "response": []
+    },
+    {
+      "name": "update",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\n    \"name\": \"Rock Street\"\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/routes/updateRoute/69a1266bef6f9b8f54432e2b",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "routes",
+            "updateRoute",
+            "69a1266bef6f9b8f54432e2b"
+          ]
+        },
+        "description": "Updates a route by ID. Only the owner can update. Requires Bearer Token."
+      },
+      "response": []
+    },
+    {
+      "name": "delete",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/api/routes/deleteRoute/69970893844af695b12552cd",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "routes",
+            "deleteRoute",
+            "69970893844af695b12552cd"
+          ]
+        },
+        "description": "Deletes a route by ID. Only the owner or admin can delete. Requires Bearer Token."
+      },
+      "response": []
+    },
+    {
+      "name": "getNearbyRoutes",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/routes/nearby?lat=7.2906&lng=80.6337&radius=1500",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "routes",
+            "nearby"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "7.2906"
+            },
+            {
+              "key": "lng",
+              "value": "80.6337"
+            },
+            {
+              "key": "radius",
+              "value": "1500"
+            },
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
