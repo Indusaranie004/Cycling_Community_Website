@@ -1,17 +1,24 @@
+const jwt = require('jsonwebtoken');
 const Route = require('../../models/Route');
 
 // Set authenticated user once
 const requireAuth = (req, res, next) => {
-  const userId = "test-user-123"; // ← Change here for Clerk
-  const userRole = "user"; // ← Change here for Clerk
-  
-  if (!userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.userId = decoded.userId;  // replaces hardcoded "test-user-123"
+    req.userRole = decoded.role;  // replaces hardcoded "user"
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
-  
-  req.userId = userId;
-  req.userRole = userRole;
-  next();
 };
 
 // Use req.userId (set by requireAuth)
