@@ -27,6 +27,8 @@ A web-based platform designed to promote sustainable transportation by enabling 
 - Input validation using **Express-Validator**.
 
 ### 2. Route Planning & Discovery
+Enables cyclists to create, manage, and discover cycling routes. Routes are mapped with automatic distance and time calculation via Mapbox, and can be shared publicly or kept private. Users can also discover nearby public routes using location-based MongoDB geospatial search.
+
 - **Mapbox Integration:** Route mapping with automatic distance, estimated time, and location name calculation. 
 - **Geospatial Search:** Discover public cycling routes near any location using MongoDB geospatial indexing.
 - **Public vs. Private:** Share routes with the community or keep them personal.
@@ -210,143 +212,171 @@ Below is a summary of the available API endpoints organized by functionality.
 | `GET` | `/api/community/challenges/:id/leaderboard` | Get challenge leaderboard |
 
 ### 🗺️ Route Planning & Discovery
-All /api/routes/* endpoints require a valid JWT:
-Authorization: Bearer <token>
+Here is the formatted Markdown documentation for the **Route Planning** module. You can append this to your existing `README.md` or keep it as a separate `API.md` file.
 
-POST /api/routes/newRoute
-Creates a new cycling route. Distance, estimated time, and start/end location names are automatically calculated via Mapbox.
-Request Body:
-json{
-  "name": "Morning Ride",
-  "coordinates": [[80.63, 7.28], [80.64, 7.29]],
-  "isPublic": true
-}
-
-Coordinates format: [longitude, latitude]. Minimum 2 points required.
-
-Success — 201:
-json{
-  "message": "Route created successfully",
-  "route": {
-    "_id": "6996b49da1f12c1ffe1f3a9a",
-    "userId": "69a0001c11a1...",
-    "name": "Morning Ride",
-    "coordinates": [[80.63, 7.28], [80.64, 7.29]],
-    "startPoint": { "type": "Point", "coordinates": [80.63, 7.28] },
-    "distance": 5000,
-    "estimatedTime": 83.33,
-    "startLocation": "Kandy, Sri Lanka",
-    "endLocation": "Kandy, Sri Lanka",
-    "isPublic": true,
-    "createdAt": "2026-02-19T06:58:37.756Z",
-    "updatedAt": "2026-02-19T06:58:37.756Z"
-  }
-}
-Errors:
-
-400 — Route name is required / At least 2 coordinates are required / Each coordinate must be a valid [longitude, latitude] pair / Visibility status is required
-401 — Authentication required
-409 — You already have a route with this name
-
-
-GET /api/routes/viewRoutes
-Retrieves routes based on query parameters.
-Query Parameters:
-ParameterTypeDescriptionuserIdstringOptional. Filter by user IDisPublicbooleanOptional. Filter by visibility (only applies to own routes)
-Scenarios:
-RequestResultNo paramsAll public routes?userId=<your_id>Your own public + private routes?userId=<your_id>&isPublic=falseYour own private routes only?userId=<other_id>Another user's public routes only
-Success — 200:
-json{
-  "message": "Routes retrieved successfully",
-  "count": 2,
-  "routes": [...]
-}
-```
-
-**Errors:**
-- `401` — Authentication required
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/routes/newRoute` | Create a new cycling route with auto-calculated distance, time, and location names via Mapbox |
+| `GET` | `/api/routes/viewRoutes` | Get routes — all public, own (public + private), or another user's public routes |
+| `GET` | `/api/routes/nearby` | Find public cycling routes near a given location within a specified radius |
+| `PUT` | `/api/routes/updateRoute/:id` | Update a route by ID — owner or admin only. Recalculates Mapbox data if coordinates change |
+| `DELETE` | `/api/routes/deleteRoute/:id` | Delete a route by ID — owner or admin only |
 
 ---
 
-### GET /api/routes/nearby
-Returns public routes whose start point falls within the specified radius, sorted by proximity.
+# 🗺️ Route Planning API
+Manage cycling routes with automatic distance calculation, estimated travel time, and geospatial search capabilities.
 
-**Query Parameters:**
+**Base URL:** `/api/routes`  
+**Authentication:** All endpoints require a valid JWT Token.
+> **Header:** `Authorization: Bearer <your_token>`
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `lat` | float | Yes | Latitude (-90 to 90) |
-| `lng` | float | Yes | Longitude (-180 to 180) |
-| `radius` | float | No | Radius in meters (default: 5000) |
+## 1. Create a New Route
+Creates a new cycling route. Distance, estimated time, and start/end location names are **automatically calculated via Mapbox** upon creation.
 
-**Example:**
-```
-GET /api/routes/nearby?lat=7.2906&lng=80.6337&radius=10000
-Success — 200:
-json{
-  "message": "Nearby routes retrieved successfully",
-  "count": 2,
-  "routes": [...]
-}
-Errors:
+- **Endpoint:** `POST /newRoute`
+- **Body:**
+  ```json
+  {
+    "name": "Morning Ride",
+    "coordinates": [[80.63, 7.28], [80.64, 7.29]], 
+    "isPublic": true
+  }
+  ```
+  *> Note: Coordinates must be in `[longitude, latitude]` format. A minimum of 2 points is required.*
 
-400 — { "errors": ["Latitude (lat) is required"] } / { "errors": ["Longitude (lng) is required"] } / { "errors": ["Latitude must be a number between -90 and 90"] } / { "errors": ["Longitude must be a number between -180 and 180"] } / { "errors": ["Radius must be a positive number"] }
-401 — Authentication required
+- **Success Response (201 Created):**
+  ```json
+  {
+    "message": "Route created successfully",
+    "route": {
+      "_id": "6996b49da1f12c1ffe1f3a9a",
+      "userId": "69a0001c11a1...",
+      "name": "Morning Ride",
+      "coordinates": [[80.63, 7.28], [80.64, 7.29]],
+      "startPoint": { "type": "Point", "coordinates": [80.63, 7.28] },
+      "distance": 5000,
+      "estimatedTime": 83.33,
+      "startLocation": "Kandy, Sri Lanka",
+      "endLocation": "Kandy, Sri Lanka",
+      "isPublic": true,
+      "createdAt": "2026-02-19T06:58:37.756Z"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400` - Validation Error (Missing name, invalid coordinates).
+  - `401` - Authentication required.
+  - `409` - A route with this name already exists for this user.
 
+---
 
-PUT /api/routes/updateRoute/:id
-Updates a route. Only the route owner or admin can update. If coordinates change, distance, time, and locations are recalculated via Mapbox.
-URL Parameter: :id — MongoDB ObjectId of the route
-Request Body (at least one field required):
-json{
-  "name": "Evening Ride",
-  "isPublic": false,
-  "coordinates": [[80.63, 7.28], [80.65, 7.30]]
-}
-Success — 200:
-json{
-  "message": "Route updated successfully",
-  "route": {
-    "_id": "6996b49da1f12c1ffe1f3a9a",
+## 2. Get All Routes
+Retrieves routes based on query parameters. Supports filtering by user and visibility.
+
+- **Endpoint:** `GET /viewRoutes`
+- **Query Parameters:**
+  | Parameter | Type | Description |
+  | :--- | :--- | :--- |
+  | `userId` | String | (Optional) Filter by specific User ID. |
+  | `isPublic` | Boolean | (Optional) Filter by visibility. |
+
+- **Usage Scenarios:**
+  | Scenario | Query | Result |
+  | :--- | :--- | :--- |
+  | **Community Feed** | *(No params)* | Returns all **public** routes from all users. |
+  | **My Routes** | `userId=<my_id>` | Returns **all** my routes (Public + Private). |
+  | **My Private Only** | `userId=<my_id>&isPublic=false` | Returns only my **private** routes. |
+  | **User Profile** | `userId=<other_id>` | Returns only **public** routes of that user. |
+
+- **Success Response (200 OK):**
+  ```json
+  {
+    "message": "Routes retrieved successfully",
+    "count": 2,
+    "routes": [...]
+  }
+  ```
+
+---
+
+## 3. Find Nearby Routes
+Returns **public** routes whose start point falls within a specified radius of the user's location, sorted by proximity.
+
+- **Endpoint:** `GET /nearby`
+- **Query Parameters:**
+  | Parameter | Type | Required | Description |
+  | :--- | :--- | :--- | :--- |
+  | `lat` | Float | **Yes** | Latitude (-90 to 90). |
+  | `lng` | Float | **Yes** | Longitude (-180 to 180). |
+  | `radius` | Integer | No | Search radius in meters (Default: 5000m). |
+
+- **Example:**
+  `GET /api/routes/nearby?lat=7.2906&lng=80.6337&radius=10000`
+
+- **Success Response (200 OK):**
+  ```json
+  {
+    "message": "Nearby routes retrieved successfully",
+    "count": 5,
+    "routes": [...]
+  }
+  ```
+
+---
+
+## 4. Update a Route
+Updates an existing route. Only the **Route Owner** or an **Admin** can perform this action.
+*> Note: If `coordinates` are updated, the system automatically recalculates distance, duration, and location names via Mapbox.*
+
+- **Endpoint:** `PUT /updateRoute/:id`
+- **Body:** (At least one field required)
+  ```json
+  {
     "name": "Evening Ride",
     "isPublic": false,
-    ...
+    "coordinates": [[80.63, 7.28], [80.65, 7.30]]
   }
-}
-Errors:
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "message": "Route updated successfully",
+    "route": { ... }
+  }
+  ```
+- **Error Responses:**
+  - `403` - Forbidden (You do not have permission).
+  - `404` - Route not found.
 
-400 — Invalid route ID format / At least one field must be provided for update / Validation errors
-401 — Authentication required
-403 — Forbidden: You do not have permission to modify this route
-404 — Route not found
-409 — You already have a route with this name
+---
 
+## 5. Delete a Route
+Permanently removes a route. Only the **Route Owner** or an **Admin** can perform this action.
 
-DELETE /api/routes/deleteRoute/:id
-Deletes a route. Only the route owner or admin can delete.
-URL Parameter: :id — MongoDB ObjectId of the route
-Success — 200:
-json{
-  "message": "Route deleted successfully",
-  "deletedRouteId": "6996b49da1f12c1ffe1f3a9a"
-}
-Errors:
+- **Endpoint:** `DELETE /deleteRoute/:id`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "message": "Route deleted successfully",
+    "deletedRouteId": "6996b49da1f12c1ffe1f3a9a"
+  }
+  ```
 
-400 — Invalid route ID format
-401 — Authentication required
-403 — Forbidden: You do not have permission to modify this route
-404 — Route not found
+---
 
+## ⚙️ Technical Integrations
 
-Third-Party API Integrations
-Mapbox APIs used internally:
-PurposeEndpointCalculate distance & estimated timeGET https://api.mapbox.com/directions/v5/mapbox/cycling/{coordinates}Resolve start location nameGET https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.jsonResolve end location nameGET https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.json
-These are called automatically on route CREATE and when coordinates are updated on UPDATE. They are not exposed directly to the client.
+### 🗺️ Mapbox API Integration
+The backend automatically communicates with Mapbox APIs during Route Creation (`POST`) and Updates (`PUT`).
+1.  **Directions API:** Calculates precise cycling distance and estimated duration based on the coordinates provided.
+2.  **Geocoding API:** Reverse geocodes the start and end coordinates to provide human-readable location names (e.g., "Kandy, Sri Lanka").
 
-MongoDB Geospatial — Nearby Routes
-Routes are stored with a startPoint field in GeoJSON Point format:
-json"startPoint": { "type": "Point", "coordinates": [80.63, 7.28] }
-A 2dsphere index is applied on this field, enabling MongoDB's $near operator to efficiently find and return routes within a given radius sorted by proximity.
+### 📍 MongoDB Geospatial Features
+Routes are stored using **GeoJSON** format for efficient spatial querying.
+- **Schema:** `startPoint: { type: "Point", coordinates: [lng, lat] }`
+- **Indexing:** A `2dsphere` index is applied to the `startPoint` field.
+- **Querying:** The `/nearby` endpoint uses the MongoDB `$near` operator to perform fast geospatial queries.
 
 ### 🚴 Rides & Impact
 | Method | Endpoint | Description |
