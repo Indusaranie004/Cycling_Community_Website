@@ -12,6 +12,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/routes', require('./routes/routeRoutes'));
+app.use('/api/interactions', require('./routes/interactionRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 
 app.use((err, req, res, next) => {
