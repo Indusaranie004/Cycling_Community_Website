@@ -7,11 +7,13 @@ const interactionSchema = new mongoose.Schema({
         unique: true
     },
     userId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User',
         required: true
     },
     routeId: {
-        type: String
+        type: mongoose.Schema.Types.ObjectId,  
+        ref: 'Route'
     },
     intLatitude: {
         type: Number

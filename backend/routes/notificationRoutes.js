@@ -6,10 +6,24 @@ const {
     updateNotification,
     deleteNotification
 } = require('../controllers/notificationController');
+const { requireAuth } = require('../middleware/auth/authRoute');
+const { checkNotificationOwnership } = require('../middleware/auth/authNotification');
+const {
+    validateNotificationQuery,
+    validateNotificationId,
+    validateUpdateNotification
+} = require('../middleware/validation/validateNotification');
 
-router.get('/', getAllNotifications);
-router.post('/trigger-expiry-check', triggerExpiryCheck);
-router.put('/:id', updateNotification);
-router.delete('/:id', deleteNotification);
+// GET all
+router.get('/', requireAuth, validateNotificationQuery, getAllNotifications);
+
+// POST trigger expiry check
+router.post('/trigger-expiry-check', requireAuth, triggerExpiryCheck);
+
+// PUT update
+router.put('/:id', requireAuth, validateNotificationId, validateUpdateNotification, checkNotificationOwnership, updateNotification);
+
+// DELETE
+router.delete('/:id', requireAuth, validateNotificationId, checkNotificationOwnership, deleteNotification);
 
 module.exports = router;

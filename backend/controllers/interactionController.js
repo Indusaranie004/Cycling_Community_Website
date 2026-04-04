@@ -3,15 +3,19 @@ const Interaction = require('../models/InteractionModel');
 // get all interactions
 const getAllInteractions = async (req, res) => {
     try {
-        const { userId, routeId, intType, isActive } = req.query;
+        const { routeId, intType, isActive } = req.query;
         const filter = {};
 
-        if (userId) filter.userId = userId;
+        filter.userId = req.userId;          // always filter by logged-in user
         if (routeId) filter.routeId = routeId;
         if (intType) filter.intType = intType;
         if (isActive !== undefined) filter.isActive = isActive === 'true';
 
-        const interactions = await Interaction.find(filter).sort({ createdAt: -1 });
+        const interactions = await Interaction.find(filter)
+            .populate('userId', 'name email')   // pulls name & email from User
+            .populate('routeId', 'name startLocation endLocation')  // pulls these fields from Route
+            .sort({ createdAt: -1 });
+
         res.status(200).json(interactions);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -21,7 +25,10 @@ const getAllInteractions = async (req, res) => {
 // get interaction by ID
 const getInteractionById = async (req, res) => {
     try {
-        const interaction = await Interaction.findById(req.params.id);
+        const interaction = await Interaction.findById(req.params.id)
+            .populate('userId', 'name email')
+            .populate('routeId', 'name startLocation endLocation');
+
         if (!interaction) return res.status(404).json({ error: 'Interaction not found' });
         res.status(200).json(interaction);
     } catch (err) {
@@ -33,11 +40,12 @@ const getInteractionById = async (req, res) => {
 const createInteraction = async (req, res) => {
     try {
         const {
-            userId, routeId, intLatitude, intLongitude,
+            routeId, intLatitude, intLongitude,
             intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime, fcmToken 
+            severityLevel, intImgUrl, expiryTime, fcmToken
         } = req.body;
 
+        const userId = req.userId; 
         if (intType === 'hazard' && !severityLevel) {
             return res.status(400).json({ error: 'severityLevel is required for hazard interactions' });
         }
@@ -48,7 +56,7 @@ const createInteraction = async (req, res) => {
         const interaction = await Interaction.create({
             userId, routeId, intLatitude, intLongitude,
             intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime, fcmToken  
+            severityLevel, intImgUrl, expiryTime, fcmToken
         });
 
         res.status(201).json(interaction);

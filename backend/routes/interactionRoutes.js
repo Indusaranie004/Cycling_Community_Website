@@ -8,15 +8,41 @@ const {
     deactivateInteraction,
     deleteInteraction
 } = require('../controllers/interactionController');
+const { requireAuth } = require('../middleware/auth/authRoute');
+const { checkInteractionOwnership } = require('../middleware/auth/authInteraction');
+const {
+    validateCreateInteraction,
+    validateUpdateInteraction,
+    validateInteractionId,
+    validateInteractionQuery
+} = require('../middleware/validation/validateInteraction');
 
-// /api/interactions
-router.get('/', getAllInteractions);
-router.post('/', createInteraction);
+// GET all
+router.get('/', requireAuth, validateInteractionQuery, getAllInteractions);
 
-// /api/interactions/:id
-router.get('/:id', getInteractionById);
-router.patch('/:id', updateInteraction);
-router.patch('/:id/deactivate', deactivateInteraction);
-router.delete('/:id', deleteInteraction);
+// GET single
+router.get('/:id', requireAuth, validateInteractionId, getInteractionById);
+
+// POST create
+router.post('/', requireAuth, validateCreateInteraction, createInteraction);
+
+// PATCH update
+router.patch('/:id', requireAuth, validateUpdateInteraction, checkInteractionOwnership, updateInteraction);
+
+// PATCH deactivate
+router.patch('/:id/deactivate', requireAuth, validateInteractionId, checkInteractionOwnership, deactivateInteraction);
+
+// DELETE
+router.delete('/:id', requireAuth, validateInteractionId, checkInteractionOwnership, deleteInteraction);
+
+// // /api/interactions
+// router.get('/', getAllInteractions);
+// router.post('/', createInteraction);
+
+// // /api/interactions/:id
+// router.get('/:id', getInteractionById);
+// router.patch('/:id', updateInteraction);
+// router.patch('/:id/deactivate', deactivateInteraction);
+// router.delete('/:id', deleteInteraction);
 
 module.exports = router;
