@@ -17,6 +17,9 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/routes', require('./routes/routeRoutes'));
+app.use('/api/interactions', require('./routes/interactionRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/rides', rideRoutes);            // Endpoint: http://localhost:3001/api/rides
 app.use('/api/impact', impactRoutes);         // Endpoint: http://localhost:3001/api/impact
 app.use('/api/community-stats', communityRoutes); // Endpoint: http://localhost:3001/api/community-stats

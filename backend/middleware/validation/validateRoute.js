@@ -1,4 +1,4 @@
-const { body, param, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 
 // Reusable error handler
 const handleValidationErrors = (req, res, next) => {
@@ -21,7 +21,7 @@ const validateCreateRoute = [
   body('isPublic')
     .notEmpty().withMessage('Visibility status is required')
     .isIn([true, false, 'true', 'false']).withMessage('Visibility status must be public or private'),
-handleValidationErrors
+  handleValidationErrors
 ];
 
 // UPDATE validation
@@ -58,4 +58,23 @@ const validateRouteId = [
   handleValidationErrors
 ];
 
-module.exports = { validateCreateRoute, validateUpdateRoute, validateRouteId };
+// NEARBY routes validation
+const validateNearbyRoutes = [
+  query('lat')
+    .notEmpty().withMessage('Latitude (lat) is required')
+    .isFloat({ min: -90, max: 90 }).withMessage('Latitude must be a number between -90 and 90'),
+  query('lng')
+    .notEmpty().withMessage('Longitude (lng) is required')
+    .isFloat({ min: -180, max: 180 }).withMessage('Longitude must be a number between -180 and 180'),
+  query('radius')
+    .optional()
+    .isFloat({ min: 1 }).withMessage('Radius must be a positive number'),
+  handleValidationErrors
+];
+
+module.exports = { 
+  validateCreateRoute, 
+  validateUpdateRoute, 
+  validateRouteId,
+  validateNearbyRoutes 
+};
