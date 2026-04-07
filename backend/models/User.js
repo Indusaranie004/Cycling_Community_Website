@@ -23,7 +23,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+
+  favoriteRoutes: {
+    type: [String],  // Array of route IDs
+    default: []
   }
+  
 }, { timestamps: true });
 
 // Hash password before saving
