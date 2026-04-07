@@ -1,7 +1,16 @@
+require('dotenv').config();
 const request = require('supertest');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const app = require('../app');
+const jwt = require('jsonwebtoken');
+
+// Generate test token using real JWT_SECRET
+const testToken = jwt.sign(
+  { userId: 'test-user-123', role: 'user' },
+  process.env.JWT_SECRET,
+  { expiresIn: '1d' }
+);
 
 // Generate test token
 const testToken = jwt.sign(
@@ -16,7 +25,6 @@ console.log('testToken:', testToken);
 // Mock Mapbox API calls
 jest.mock('axios', () => ({
   get: jest.fn((url) => {
-    // Mock Directions API
     if (url.includes('directions')) {
       return Promise.resolve({
         data: {
@@ -27,7 +35,6 @@ jest.mock('axios', () => ({
         }
       });
     }
-    // Mock Geocoding API
     if (url.includes('geocoding')) {
       return Promise.resolve({
         data: {
@@ -93,7 +100,6 @@ describe('CREATE Route', () => {
   });
 
   test('Rejects duplicate name for same user', async () => {
-    // Create first route
     await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -103,7 +109,6 @@ describe('CREATE Route', () => {
         isPublic: true
       });
 
-    // Try to create duplicate
     const res = await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -198,7 +203,6 @@ describe('UPDATE Route', () => {
   });
 
   test('Rejects duplicate name for same user', async () => {
-    // Create second route
     await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -208,7 +212,6 @@ describe('UPDATE Route', () => {
         isPublic: true
       });
 
-    // Try to rename Morning Ride to Evening Ride
     const res = await request(app)
       .put(`/api/routes/updateRoute/${routeId}`)
       .set('Authorization', `Bearer ${testToken}`)
