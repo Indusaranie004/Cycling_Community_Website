@@ -13,7 +13,7 @@ export default function Navbar() {
       className={`px-4 py-2 rounded text-sm font-medium transition-colors
         ${pathname === path
           ? 'bg-brand-sage text-brand-dark'
-          : 'text-brand-cream hover:text-brand-sage'}`,}
+          : 'text-brand-cream hover:text-brand-sage'}`}
     >
       {label}
     </button>

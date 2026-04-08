@@ -17,6 +17,10 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/routes', require('./routes/routeRoutes'));
+
+app.use('/api/community/events', require('./routes/communityEventRoutes'));
+app.use('/api/community/challenges', require('./routes/communityChallengeRoutes'));
+
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/favourites', require('./routes/favouriteRoutes'));
 app.use('/api/interactions', require('./routes/interactionRoutes'));
@@ -27,6 +31,7 @@ app.use('/api/impact', impactRoutes);         // Endpoint: http://localhost:3001
 app.use('/api/community-stats', communityRoutes); // Endpoint: http://localhost:3001/api/community-stats
 
 scheduleMonthlyEmails(); 
+
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
