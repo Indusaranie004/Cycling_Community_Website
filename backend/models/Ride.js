@@ -1,17 +1,14 @@
 const mongoose = require('mongoose');
 
 const rideSchema = new mongoose.Schema({
-  // Foreign Keys (will connect to Users and Routes later)
   user_id: {
-    // type: mongoose.Schema.Types.ObjectId,
-    // ref: 'User', 
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', 
     required: true 
   },
   route_id: {
-    // type: mongoose.Schema.Types.ObjectId,
-    // ref: 'Route',
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Route',
     required: false 
   },
   

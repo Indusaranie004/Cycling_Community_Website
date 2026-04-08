@@ -1,95 +1,130 @@
 const Ride = require('../models/Ride');
 const EcoImpact = require('../models/EcoImpact');
 const CommunityStat = require('../models/CommunityStat');
+const mongoose = require('mongoose');
 
 const CO2_PER_KM = 0.21;
 const KM_PER_LITER = 12.5;
 const CALORIES_PER_KM = 30; 
 
-// @route   POST /api/rides
-const createRide = async (req, res) => {
+const calculateEcoImpact = (distance_km) => {
+  // ... (keep your existing calculation logic here) ...
+  const co2_saved_kg = parseFloat((distance_km * CO2_PER_KM).toFixed(2));
+  const fuel_saved_liters = parseFloat((distance_km / KM_PER_LITER).toFixed(2));
+  const calories_burned = Math.round(distance_km * CALORIES_PER_KM);
+  const eco_score = Math.round((distance_km * 10) + (co2_saved_kg * 5));
+  return { co2_saved_kg, fuel_saved_liters, calories_burned, eco_score };
+};
+
+// Get all rides (for a community feed, etc.)
+const getAllRides = async (req, res) => {
   try {
-    const { 
-      user_id, route_id, distance_km, duration_minutes, 
-      avg_speed, start_time, end_time 
-    } = req.body;
-
-    // 1. Is distance > 0?
-    if (!distance_km || distance_km <= 0) {
-      return res.status(400).json({ message: "Error: Distance must be greater than 0" });
-    }
-
-    // 2. Is GPS/Speed Valid? (Simple Logic: If speed is > 50km/h, it's likely not a bicycle)
-    if (avg_speed > 50) {
-      return res.status(400).json({ message: "Error: GPS data invalid (Speed too high for cycling)" });
-    }
-
-    // 3. Is Duration Reasonable? (e.g., cannot ride 10km in 1 minute)
-    // 50km/h = 0.83 km/min. If distance/time > 0.83, it's suspicious.
-    if ((distance_km / duration_minutes) > 0.9) {
-      return res.status(400).json({ message: "Error: Duration is not reasonable for this distance" });
-    }
-
-    const newRide = new Ride({
-      user_id, // Dummy ID from frontend for now
-      route_id: route_id || null,
-      distance_km,
-      duration_minutes,
-      avg_speed,
-      start_time,
-      end_time
-    });
-
-    const savedRide = await newRide.save();
-
-    const co2_saved = (distance_km * CO2_PER_KM).toFixed(2);
-    const fuel_saved = (distance_km / KM_PER_LITER).toFixed(2);
-    const calories = Math.round(distance_km * CALORIES_PER_KM);
-    
-    const score = Math.round((distance_km * 10) + (co2_saved * 5));
-
-    const newImpact = new EcoImpact({
-      ride_id: savedRide._id,
-      co2_saved_kg: co2_saved,
-      fuel_saved_liters: fuel_saved,
-      calories_burned: calories,
-      eco_score: score
-    });
-
-    await newImpact.save();
-
-    let stats = await CommunityStat.findOne();
-    
-    if (!stats) {
-        stats = new CommunityStat({
-            total_community_distance: 0,
-            total_community_co2_saved: 0,
-            total_rides: 0
-        });
-    }
-
-    stats.total_community_distance += parseFloat(distance_km);
-    stats.total_community_co2_saved += parseFloat(co2_saved);
-    stats.total_rides += 1;
-
-    await stats.save();
-
-    res.status(201).json({
-      message: "Ride saved and Impact calculated",
-      ride: savedRide,
-      impact: newImpact
-    });
-
+    // Fetches all rides and populates user info and route info
+    const rides = await Ride.find()
+      .populate('user_id route_id')
+      .sort({ createdAt: -1 });
+      
+    res.status(200).json(rides);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @route   GET /api/rides/user/:userId
-const getUserRides = async (req, res) => {
+// @route   POST /api/rides
+const createRide = async (req, res) => {
+  const user_id = req.userId; // Matches the middleware below!
+  
   try {
-    const rides = await Ride.find({ user_id: req.params.userId }).sort({ createdAt: -1 });
+    // Removed user_id from req.body to prevent spoofing
+    const { route_id, distance_km, duration_minutes, start_time, end_time } = req.body;
+
+    if (!distance_km || distance_km <= 0) return res.status(400).json({ message: "Error: Distance > 0" });
+    
+    const avg_speed = distance_km / (duration_minutes / 60);
+    if (avg_speed > 50) return res.status(400).json({ message: "Error: Speed too high" });
+    if (!duration_minutes || duration_minutes <= 0) return res.status(400).json({ message: "Error: Invalid duration" });
+
+    const newRide = new Ride({
+      user_id: new mongoose.Types.ObjectId(user_id),
+      route_id: route_id ? new mongoose.Types.ObjectId(route_id) : null,
+      distance_km, duration_minutes, avg_speed, start_time, end_time
+    });
+    const savedRide = await newRide.save();
+    
+    const impactData = calculateEcoImpact(distance_km);
+    const newImpact = new EcoImpact({ ride_id: savedRide._id, ...impactData });
+    await newImpact.save();
+
+    let stats = await CommunityStat.findOne();
+    if (!stats) stats = new CommunityStat({ total_community_distance: 0, total_community_co2_saved: 0, total_rides: 0 });
+
+    stats.total_community_distance += parseFloat(distance_km);
+    stats.total_community_co2_saved += impactData.co2_saved_kg;
+    stats.total_rides += 1;
+    await stats.save();
+
+    res.status(201).json({ message: "Ride saved", ride: savedRide, impact: newImpact });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   GET /api/rides/me
+const getMyRides = async (req, res) => {
+  try {
+    const rides = await Ride.find({ user_id: req.userId }).populate('route_id').sort({ createdAt: -1 });
     res.status(200).json(rides);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   GET /api/rides/stats/me
+// Get total distance, total rides, and time for the logged-in user
+const getMyPersonalStats = async (req, res) => {
+  try {
+    const userId = req.userId; // Get logged-in user from token
+
+    // We use MongoDB Aggregate to sum up all this user's rides
+    const stats = await Ride.aggregate([
+      { $match: { user_id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: null,
+          total_rides: { $sum: 1 }, // Counts how many rides they have
+          total_distance: { $sum: "$distance_km" }, // Adds up all the distance
+          total_duration: { $sum: "$duration_minutes" } // Adds up all the time
+        }
+      }
+    ]);
+
+    // If the user has no rides yet, stats will be an empty array
+    if (stats.length === 0) {
+      return res.status(200).json({
+        total_rides: 0,
+        total_distance: 0,
+        total_duration: 0
+      });
+    }
+
+    res.status(200).json(stats[0]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   GET /api/rides/:id
+const getRideById = async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id).populate('user_id route_id');
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    
+    // Optional: Only allow user to see their own ride, unless it's public
+    if (ride.user_id._id.toString() !== req.userId) {
+       return res.status(403).json({ message: "Not authorized to view this ride" });
+    }
+
+    res.status(200).json(ride);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -99,29 +134,40 @@ const getUserRides = async (req, res) => {
 const updateRide = async (req, res) => {
   try {
     const { id } = req.params;
+    const user_id = req.userId;
     const updates = req.body;
 
-    // Optional: Prevent updating critical fields like user_id if not allowed
-    // For now, we allow updating distance/time/speed corrections
-    
-    const updatedRide = await Ride.findByIdAndUpdate(
-      id, 
-      updates, 
-      { new: true } // Return the updated document
-    );
+    const ride = await Ride.findById(id);
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
 
-    if (!updatedRide) {
-      return res.status(404).json({ message: "Ride not found" });
+    // SECURITY FIX: Check ownership before updating
+    if (ride.user_id.toString() !== user_id) {
+      return res.status(403).json({ message: "Not authorized to update this ride" });
     }
 
-    // Note: In a real app, if you update distance, you should recalculate EcoImpact.
-    // For the assignment demo, updating the ride details is usually enough.
+    const oldDistance = ride.distance_km;
 
-    res.status(200).json({
-      message: "Ride updated successfully",
-      ride: updatedRide
-    });
+    if (updates.distance_km) ride.distance_km = updates.distance_km;
+    if (updates.duration_minutes) ride.duration_minutes = updates.duration_minutes;
+    if (updates.start_time) ride.start_time = updates.start_time;
+    if (updates.end_time) ride.end_time = updates.end_time;
 
+    ride.avg_speed = parseFloat((ride.distance_km / (ride.duration_minutes / 60)).toFixed(2));
+    if (ride.avg_speed > 50) return res.status(400).json({ message: "Calculated speed too high" });
+
+    await ride.save();
+
+    const impactData = calculateEcoImpact(ride.distance_km);
+    await EcoImpact.findOneAndUpdate({ ride_id: id }, impactData);
+
+    const stats = await CommunityStat.findOne();
+    if (stats) {
+      stats.total_community_distance += (ride.distance_km - oldDistance);
+      stats.total_community_co2_saved += (impactData.co2_saved_kg - (oldDistance * CO2_PER_KM));
+      await stats.save();
+    }
+
+    res.status(200).json({ message: "Ride updated", ride });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -131,23 +177,38 @@ const updateRide = async (req, res) => {
 const deleteRide = async (req, res) => {
   try {
     const { id } = req.params;
+    const user_id = req.userId;
 
-    const ride = await Ride.findByIdAndDelete(id);
+    // SECURITY FIX: Use findById first! Do not use findByIdAndDelete here.
+    const ride = await Ride.findById(id);
 
     if (!ride) {
       return res.status(404).json({ message: "Ride not found" });
     }
 
-    await EcoImpact.findOneAndDelete({ ride_id: id });
+    if (ride.user_id.toString() !== user_id) {
+      return res.status(403).json({ message: "Not authorized to delete this ride" });
+    }
 
-    res.status(200).json({
-      message: "Ride and associated Impact data deleted successfully",
-      id: id
-    });
+    // It is safe to delete now
+    await ride.deleteOne(); 
 
+    // FIX: Delete the associated EcoImpact so it doesn't get left behind
+    const impact = await EcoImpact.findOneAndDelete({ ride_id: id });
+
+    // Update CommunityStat
+    const stats = await CommunityStat.findOne();
+    if (stats) {
+      stats.total_community_distance -= ride.distance_km;
+      stats.total_community_co2_saved -= impact ? impact.co2_saved_kg : 0;
+      stats.total_rides -= 1;
+      await stats.save();
+    }
+
+    res.status(200).json({ message: "Ride deleted successfully", id: id });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { createRide, getUserRides, updateRide, deleteRide };
+module.exports = { getAllRides, getMyPersonalStats, createRide, getMyRides, getRideById, updateRide, deleteRide };

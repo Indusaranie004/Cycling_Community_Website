@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const ecoImpactSchema = new mongoose.Schema({
-  // Foreign Key (Connects to the Ride)
   ride_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Ride',

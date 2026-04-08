@@ -6,7 +6,7 @@ const communityStatSchema = new mongoose.Schema({
     type: String,
     required: true
   },*/
-  total_community_time: {
+  total_community_distance: {
     type: Number,
     default: 0
   },
