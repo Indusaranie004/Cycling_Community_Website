@@ -6,7 +6,7 @@ const getAllCommunityChallenges = async (req, res) => {
     try {
         const { status } = req.query;
         const filter = status ? { status } : {};
-        
+
         const communityChallenges = await CommunityChallenge.find(filter).sort({ startDate: 1 });
         res.status(200).json(communityChallenges);
     } catch (err) {
@@ -18,23 +18,29 @@ const getAllCommunityChallenges = async (req, res) => {
 const getCommunityChallengeById = async (req, res) => {
     try {
         const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
-        
+
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Community challenge not found' });
         }
-        
+
         res.status(200).json(communityChallenge);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// CREATE community challenge
+// CREATE community challenge (ADMIN only)
 const createCommunityChallenge = async (req, res) => {
     try {
-        const { userId, title, description, targetDistance, startDate, endDate } = req.body;
+        const userId = req.userId; // From JWT
+        const userRole = req.userRole; // From JWT
+        if (userRole !== 'admin') {
+            return res.status(403).json({ error: 'Only admins can create challenges' });
+        }
 
-        if (!userId || !title || !targetDistance || !startDate || !endDate) {
+        const { title, description, targetDistance, startDate, endDate } = req.body;
+
+        if (!title || !targetDistance || !startDate || !endDate) {
             return res.status(400).json({ error: 'All required fields must be provided' });
         }
 
@@ -55,17 +61,17 @@ const createCommunityChallenge = async (req, res) => {
     }
 };
 
-// JOIN community challenge
+// JOIN community challenge (Authenticated users only)
 const joinCommunityChallenge = async (req, res) => {
     try {
-        const { userId } = req.body;
-        
+        const userId = req.userId; // From JWT
+
         if (!userId) {
-            return res.status(400).json({ error: 'userId is required' });
+            return res.status(401).json({ error: 'Authentication required' });
         }
 
         const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
-        
+
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
@@ -89,26 +95,27 @@ const joinCommunityChallenge = async (req, res) => {
             joinedAt: new Date()
         });
 
-        res.status(200).json({ 
-            message: 'Successfully joined challenge', 
-            communityChallenge 
+        res.status(200).json({
+            message: 'Successfully joined challenge',
+            communityChallenge
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// UPDATE progress - User logs cycling activity
+// UPDATE progress - User logs cycling activity (Authenticated users only)
 const updateCommunityChallengeProgress = async (req, res) => {
     try {
-        const { userId, distance } = req.body;
-        
+        const userId = req.userId; // From JWT
+        const { distance } = req.body;
+
         if (!userId || distance === undefined) {
             return res.status(400).json({ error: 'userId and distance are required' });
         }
 
         const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
-        
+
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
@@ -128,9 +135,9 @@ const updateCommunityChallengeProgress = async (req, res) => {
         participant.progress += distance;
         await participant.save();
 
-        res.status(200).json({ 
-            message: 'Progress updated successfully', 
-            progress: participant.progress 
+        res.status(200).json({
+            message: 'Progress updated successfully',
+            progress: participant.progress
         });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -142,10 +149,10 @@ const updateCommunityChallengeProgress = async (req, res) => {
 const getChallengeParticipants = async (req, res) => {
     try {
         // First, verify the challenge exists
-        const communityChallenge = await CommunityChallenge.findOne({ 
-            challengeId: req.params.id 
+        const communityChallenge = await CommunityChallenge.findOne({
+            challengeId: req.params.id
         });
-        
+
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
@@ -155,7 +162,7 @@ const getChallengeParticipants = async (req, res) => {
             challengeId: communityChallenge.challengeId,
             status: { $ne: 'cancelled' }  // Exclude cancelled participants
         })
-        .sort({ joinedAt: 1 });  // Sort by who joined first
+            .sort({ joinedAt: 1 });  // Sort by who joined first
 
         res.status(200).json({
             challengeId: communityChallenge.challengeId,
@@ -173,7 +180,7 @@ const getChallengeParticipants = async (req, res) => {
 const getCommunityChallengeLeaderboard = async (req, res) => {
     try {
         const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
-        
+
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
@@ -197,10 +204,10 @@ const getCommunityChallengeLeaderboard = async (req, res) => {
     }
 };
 
-// GET user's participation history
+// GET user's participation history (Authenticated users only)
 const getUserParticipationHistory = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = req.userId; // From JWT
 
         const participations = await CommunityParticipant.find({ userId })
             .sort({ joinedAt: -1 });
@@ -211,17 +218,17 @@ const getUserParticipationHistory = async (req, res) => {
     }
 };
 
-// Check if challenge ended and calculate winner
+// Check if challenge ended and calculate winner (Admin only)
 const checkChallengeEnded = async (req, res) => {
     try {
-        const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
-        
+        const communityChallenge = req.challenge; // From ownership middleware
+
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
 
         if (!communityChallenge.hasEnded()) {
-            return res.status(200).json({ 
+            return res.status(200).json({
                 message: 'Challenge is still active',
                 ended: false
             });
@@ -239,7 +246,7 @@ const checkChallengeEnded = async (req, res) => {
         communityChallenge.status = 'completed';
         await communityChallenge.save();
 
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Challenge ended',
             ended: true,
             winner: winner ? {
@@ -262,5 +269,5 @@ module.exports = {
     getCommunityChallengeLeaderboard,
     getUserParticipationHistory,
     checkChallengeEnded,
-    getChallengeParticipants 
+    getChallengeParticipants
 };

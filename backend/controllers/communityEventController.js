@@ -29,12 +29,20 @@ const getCommunityEventById = async (req, res) => {
     }
 };
 
-// CREATE community event
+// CREATE community event (ADMIN only)
 const createCommunityEvent = async (req, res) => {
     try {
-        const { userId, title, description, location, eventDate, eventTime, maxParticipants } = req.body;
 
-        if (!userId || !title || !location || !eventDate || !eventTime || !maxParticipants) {
+        const userId = req.userId; // From JWT
+        const userRole = req.userRole; // From JWT
+
+        if (userRole !== 'admin') {
+            return res.status(403).json({ error: 'Only admins can create events' });
+        }
+
+        const { title, description, location, eventDate, eventTime, maxParticipants } = req.body;
+
+        if (!title || !location || !eventDate || !eventTime || !maxParticipants) {
             return res.status(400).json({ error: 'All required fields must be provided' });
         }
 
@@ -51,13 +59,13 @@ const createCommunityEvent = async (req, res) => {
     }
 };
 
-// JOIN community event
+// JOIN community event (Authenticated users only)
 const joinCommunityEvent = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId; // From JWT
         
         if (!userId) {
-            return res.status(400).json({ error: 'userId is required' });
+            return res.status(401).json({ error: 'Authentication required' });
         }
 
         const communityEvent = await CommunityEvent.findOne({ eventId: req.params.id });
@@ -123,10 +131,14 @@ const getEventParticipants = async (req, res) => {
     }
 };
 
-// WITHDRAW from event
+// WITHDRAW from event (Authenticated users only)
 const withdrawFromEvent = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId; // From JWT
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
 
         const participant = await CommunityParticipant.findOne({
             userId,
@@ -153,20 +165,29 @@ const withdrawFromEvent = async (req, res) => {
     }
 };
 
-// UPDATE community event
+// UPDATE community event (Owner or Admin only - ownership checked in middleware)
 const updateCommunityEvent = async (req, res) => {
     try {
-        const communityEvent = await CommunityEvent.findOneAndUpdate(
-            { eventId: req.params.id },
-            { $set: req.body },
+        const existingEvent = req.event; // From middleware
+
+        const { title, description, location, eventDate, eventTime, maxParticipants, status } = req.body;
+
+        const updatedData = {};
+        if(title!== undefined) updatedData.title = title;
+        if(description !== undefined) updatedData.description = description;
+        if(location !== undefined) updatedData.location = location;
+        if(eventDate !== undefined) updatedData.eventDate = eventDate;
+        if(eventTime !== undefined) updatedData.eventTime = eventTime;
+        if(maxParticipants !== undefined) updatedData.maxParticipants = maxParticipants;
+        if(status !== undefined) updatedData.status = status;
+
+        const updatedEvent = await CommunityEvent.findOneAndUpdate(
+            { eventId: existingEvent.eventId },
+            { $set: updatedData },
             { new: true, runValidators: true }
         );
         
-        if (!communityEvent) {
-            return res.status(404).json({ error: 'Event not found' });
-        }
-        
-        res.status(200).json(communityEvent);
+        res.status(200).json(updatedEvent);
     } catch (err) {
         if (err.name === 'ValidationError') {
             return res.status(400).json({ error: err.message });
@@ -178,15 +199,11 @@ const updateCommunityEvent = async (req, res) => {
 // DELETE community event
 const deleteCommunityEvent = async (req, res) => {
     try {
-        const communityEvent = await CommunityEvent.findOneAndDelete({ eventId: req.params.id });
-        
-        if (!communityEvent) {
-            return res.status(404).json({ error: 'Event not found' });
-        }
-        
-        // Delete all participant records for this event
-        await CommunityParticipant.deleteMany({ eventId: communityEvent.eventId });
-        
+        const event = req.event; // From middleware
+
+        await CommunityEvent.findOneAndDelete({ eventId: event.eventId });
+        await CommunityParticipant.deleteMany({ eventId: event.eventId });
+
         res.status(200).json({ message: 'Event deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
