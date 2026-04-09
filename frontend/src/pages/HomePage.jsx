@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
-// ─── Data Normalizers (Handling Real DB Values) ─────────────────────────────
-
 // Converts meters to km (e.g., 12180.694 -> 12.2 km)
 function formatDistance(metres) {
   if (!metres) return "0 km";
