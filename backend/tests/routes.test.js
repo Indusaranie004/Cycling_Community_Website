@@ -1,18 +1,9 @@
 require('dotenv').config();
 const request = require('supertest');
-require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const app = require('../app');
-const jwt = require('jsonwebtoken');
 
 // Generate test token using real JWT_SECRET
-const testToken = jwt.sign(
-  { userId: 'test-user-123', role: 'user' },
-  process.env.JWT_SECRET,
-  { expiresIn: '1d' }
-);
-
-// Generate test token
 const testToken = jwt.sign(
   { userId: 'test-user-123', role: 'user' },
   process.env.JWT_SECRET,
@@ -30,7 +21,10 @@ jest.mock('axios', () => ({
         data: {
           routes: [{
             distance: 5000,
-            duration: 1200
+            duration: 1200,
+            geometry: {
+              coordinates: [[80.63, 7.28], [80.64, 7.29]]
+            }
           }]
         }
       });
@@ -273,7 +267,6 @@ describe('DELETE Route', () => {
 // ==================== NEARBY ====================
 describe('NEARBY Routes', () => {
   beforeEach(async () => {
-    // Create a test route for nearby search
     await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)

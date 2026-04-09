@@ -49,7 +49,7 @@ const createRoute = async (req, res) => {
     const newRoute = new Route({
       userId,
       name,
-      coordinates,
+      coordinates: route.geometry.coordinates,
       startPoint: {
         type: 'Point',
         coordinates: coordinates[0]  // [longitude, latitude]
@@ -149,7 +149,7 @@ const updateRoute = async (req, res) => {
         { params: { access_token: process.env.MAPBOX_TOKEN }}
       );
 
-      updateData.coordinates = coordinates;
+      updateData.coordinates = route.geometry.coordinates;
       updateData.startPoint = {
         type: 'Point',
         coordinates: coordinates[0]  // Update start point too
