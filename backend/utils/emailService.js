@@ -23,7 +23,7 @@ const sendMonthlyReport = async (userEmail, userName, stats, communityStats) => 
         <h3 style="margin-top: 0;">Community Impact 🌍</h3>
         <p>Together, we have saved <strong>${communityStats.total_community_co2_saved.toFixed(2)} kg</strong> of CO2!</p>
       </div>
-      <p style="text-align: center; color: #777; font-size: 12px;">- The EcoCycle Team</p>
+      <p style="text-align: center; color: #777; font-size: 12px;">- The Routify Team</p>
     </div>
   `;
 
