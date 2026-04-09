@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage';
 import MapPage from './pages/MapPage';
 import ProfilePage from './pages/ProfilePage';
 import Navbar from './components/shared/Navbar';
+import HomePage from './pages/HomePage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
@@ -21,6 +22,7 @@ export default function App() {
           <Route path='/' element={<PrivateRoute><MapPage /></PrivateRoute>} />
           <Route path='/profile' element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path='*' element={<Navigate to='/' replace />} />
+          <Route path='/home' element={<PrivateRoute><HomePage /></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

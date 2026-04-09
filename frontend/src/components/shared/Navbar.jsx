@@ -6,6 +6,9 @@ export default function Navbar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { token } = useAuth(); 
+  
+  if (!token) return null;
 
   const navLink = (label, path) => (
     <button
@@ -27,6 +30,7 @@ export default function Navbar() {
         EcoRide
       </span>
       <div className='flex items-center gap-2'>
+        {navLink('Home', '/home')}
         {navLink('Map', '/')}
         {navLink('Profile', '/profile')}
         <button
