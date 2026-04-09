@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function AuthPage() {
   const [mode, setMode] = useState('login');        // 'login' | 'register'
