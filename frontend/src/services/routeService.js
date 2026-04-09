@@ -20,6 +20,6 @@ export const createRoute = (data) =>
 export const updateRoute = (id, data) =>
   api.put(`/api/routes/updateRoute/${id}`, data);
 
-//DELETE a route
+// DELETE a route
 export const deleteRoute = (id) =>
-    api.delete(`/api/routes/deleteRoute/${id}`);
+  api.delete(`/api/routes/deleteRoute/${id}`);

@@ -1,34 +1,109 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const FILTERS = [
-  { key: 'public', label: 'All Public', dot: '#ACBFA4' },
-  { key: 'myRoutes', label: 'My Routes', dot: '#4A90D9' },
-  { key: 'nearby', label: 'Nearby', dot: '#FF7F11' },
-  { key: 'saved', label: 'Saved', dot: '#FF1B1C' },
+  { key: 'myRoutes', label: 'My Routes' },
+  { key: 'saved',    label: 'Saved'     },
 ];
 
 export default function FilterPanel({ activeFilter, onChange }) {
+  const [open, setOpen] = useState(false);
+
+  const handleToggle = (key) => {
+    onChange(activeFilter === key ? 'public' : key);
+  };
+
+  const handleClear = () => {
+    onChange('public');
+  };
+
+  const isFiltered = activeFilter !== 'public';
+
   return (
-    <div className='absolute top-20 right-4 z-10
-      bg-brand-dark/90 backdrop-blur-sm
-      rounded-xl shadow-lg p-3 flex flex-col gap-2'>
-      {FILTERS.map(f => (
+    <>
+      {/* Trigger button — top right, shows active state indicator */}
+      <div className='absolute top-20 right-4 z-10'>
         <button
-          key={f.key}
-          onClick={() => onChange(f.key)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-            transition-colors text-left
-            ${activeFilter === f.key
+          onClick={() => setOpen(o => !o)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+            shadow-lg transition-colors
+            ${open || isFiltered
               ? 'bg-brand-cream text-brand-dark'
-              : 'text-brand-cream hover:bg-white/10'}`}
+              : 'bg-brand-dark/80 backdrop-blur-sm text-brand-cream hover:bg-brand-dark'}`}
         >
-          <span
-            className='w-2.5 h-2.5 rounded-full flex-shrink-0'
-            style={{ backgroundColor: f.dot }}
-          />
-          {f.label}
+          {/* Sliders icon */}
+          <svg width='16' height='16' viewBox='0 0 16 16' fill='none'
+            xmlns='http://www.w3.org/2000/svg'>
+            <line x1='2' y1='4' x2='14' y2='4' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round'/>
+            <line x1='2' y1='8' x2='14' y2='8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round'/>
+            <line x1='2' y1='12' x2='14' y2='12' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round'/>
+            <circle cx='5' cy='4' r='2' fill='currentColor'/>
+            <circle cx='10' cy='8' r='2' fill='currentColor'/>
+            <circle cx='6' cy='12' r='2' fill='currentColor'/>
+          </svg>
+          Filters
+          {isFiltered && (
+            <span className='w-2 h-2 rounded-full bg-brand-orange flex-shrink-0' />
+          )}
         </button>
-      ))}
-    </div>
+
+        {/* Dropdown card */}
+        {open && (
+          <div className='absolute top-12 right-0 z-20 w-56
+            bg-white rounded-2xl shadow-2xl p-4'>
+            {/* Card header */}
+            <div className='flex items-center justify-between mb-4'>
+              <p className='font-bold text-brand-dark text-sm'>Filter Routes</p>
+              <button
+                onClick={() => setOpen(false)}
+                className='text-gray-400 hover:text-brand-dark transition-colors text-lg leading-none'
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Radio-style options */}
+            <div className='space-y-3'>
+              {FILTERS.map(f => {
+                const isActive = activeFilter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => handleToggle(f.key)}
+                    className='w-full flex items-center gap-3 text-left group'
+                  >
+                    {/* Radio circle */}
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center
+                      justify-center flex-shrink-0 transition-colors
+                      ${isActive
+                        ? 'border-brand-dark bg-brand-dark'
+                        : 'border-gray-300 group-hover:border-brand-dark'}`}>
+                      {isActive && (
+                        <span className='w-2 h-2 rounded-full bg-white' />
+                      )}
+                    </span>
+                    <span className={`text-sm font-medium transition-colors
+                      ${isActive ? 'text-brand-dark' : 'text-gray-500 group-hover:text-brand-dark'}`}>
+                      {f.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Clear button — only visible when a filter is active */}
+            {isFiltered && (
+              <button
+                onClick={() => { handleClear(); setOpen(false); }}
+                className='mt-4 w-full py-2 rounded-xl text-xs font-semibold
+                  border border-gray-200 text-gray-500
+                  hover:border-brand-red hover:text-brand-red transition-colors'
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

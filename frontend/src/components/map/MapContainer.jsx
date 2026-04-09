@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Map from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import RouteLayer from './RouteLayer';
@@ -6,21 +6,24 @@ import WaypointLayer from './WaypointLayer';
 
 const TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
-// Colour per filter
 const FILTER_COLOURS = {
-  public: '#ACBFA4',
-  myRoutes: '#4A90D9',
-  nearby: '#FF7F11',
-  saved: '#FF1B1C',
+  public: '#0158CA',
+  myRoutes: '#3235FF',
+  nearby: '#E42926',
+  saved: '#008A10',
   preview: '#262626',
 };
 
+const ZOOM_THRESHOLD = 11;
+
 export default function MapContainer({
   mode, routes, waypoints, selectedRoute,
-  mapCenter, activeFilter,
+  mapCenter, activeFilter, zoom, onZoomChange,
   onMapClick, onRouteClick, onWaypointRemove,
 }) {
   const mapRef = useRef();
+  const [hoveredRoute, setHoveredRoute] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   // Fly to mapCenter when it changes (e.g. after nearby search)
   useEffect(() => {
@@ -29,35 +32,98 @@ export default function MapContainer({
     }
   }, [mapCenter]);
 
+  // Only register line layers as interactive when zoomed in enough to see them
+  const interactiveLayerIds = zoom >= ZOOM_THRESHOLD
+    ? routes
+        .filter(r => r.coordinates && r.coordinates.length >= 2)
+        .map(r => `line-${r._id}`)
+    : [];
+
   const handleClick = (e) => {
     if (onMapClick) onMapClick(e.lngLat);
   };
 
+  const handleMove = (e) => {
+    if (onZoomChange) onZoomChange(e.viewState.zoom);
+  };
+
+  // Detect which route line the cursor is over and show a tooltip
+  const handleMouseMove = useCallback((e) => {
+    if (e.features && e.features.length > 0) {
+      const layerId = e.features[0].layer.id;
+      if (layerId.startsWith('line-')) {
+        const routeId = layerId.replace('line-', '');
+        const route = routes.find(r => r._id === routeId);
+        if (route) {
+          setHoveredRoute(route);
+          setTooltipPos({ x: e.point.x, y: e.point.y });
+          return;
+        }
+      }
+    }
+    setHoveredRoute(null);
+  }, [routes]);
+
+  const handleMouseLeave = useCallback(() => {
+    setHoveredRoute(null);
+  }, []);
+
+  const cursor = hoveredRoute
+    ? 'pointer'
+    : mode === 'create'
+    ? 'crosshair'
+    : 'default';
+
   return (
-    <Map
-      ref={mapRef}
-      initialViewState={{ longitude: 80.63, latitude: 7.29, zoom: 11 }}
-      style={{ width: '100%', height: '100%' }}
-      mapStyle='mapbox://styles/mapbox/outdoors-v12'
-      mapboxAccessToken={TOKEN}
-      onClick={handleClick}
-      cursor={mode === 'create' ? 'crosshair' : 'default'}
-    >
-      {/* Existing routes layer */}
-      <RouteLayer
-        routes={routes}
-        lineColor={FILTER_COLOURS[activeFilter]}
-        selectedRouteId={selectedRoute?._id}
-        onRouteClick={onRouteClick}
-      />
-      {/* Waypoints and preview line in Create Mode */}
-      {mode === 'create' && (
-        <WaypointLayer
-          waypoints={waypoints}
-          lineColor={FILTER_COLOURS.preview}
-          onRemove={onWaypointRemove}
+    <div className='relative w-full h-full'>
+      <Map
+        ref={mapRef}
+        initialViewState={{ longitude: 80.63, latitude: 7.29, zoom: 11 }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle='mapbox://styles/mapbox/outdoors-v12'
+        mapboxAccessToken={TOKEN}
+        onClick={handleClick}
+        onMove={handleMove}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        interactiveLayerIds={interactiveLayerIds}
+        cursor={cursor}
+      >
+        <RouteLayer
+          routes={routes}
+          lineColor={FILTER_COLOURS[activeFilter]}
+          selectedRouteId={selectedRoute?._id}
+          onRouteClick={onRouteClick}
+          zoom={zoom}
         />
+        {mode === 'create' && (
+          <WaypointLayer
+            waypoints={waypoints}
+            lineColor={FILTER_COLOURS.preview}
+            onRemove={onWaypointRemove}
+          />
+        )}
+      </Map>
+
+      {/* Hover tooltip — rendered outside the Map so it sits on top cleanly */}
+      {hoveredRoute && (
+        <div
+          className='absolute z-30 pointer-events-none
+            bg-brand-dark/95 text-brand-cream rounded-xl
+            px-3 py-2 shadow-xl text-xs max-w-xs'
+          style={{
+            left: tooltipPos.x + 14,
+            top: tooltipPos.y - 48,
+          }}
+        >
+          <p className='font-semibold truncate'>{hoveredRoute.name}</p>
+          <p className='text-gray-300 truncate mt-0.5'>
+            {hoveredRoute.startLocation || 'Start'}
+            {' → '}
+            {hoveredRoute.endLocation || 'End'}
+          </p>
+        </div>
       )}
-    </Map>
+    </div>
   );
 }
