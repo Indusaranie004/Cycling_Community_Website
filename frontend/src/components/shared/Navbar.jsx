@@ -33,6 +33,7 @@ export default function Navbar() {
         {navLink('Home', '/home')}
         {navLink('Map', '/')}
         {navLink('Profile', '/profile')}
+        {navLink('Interactions', '/interactions')}
         <button
           onClick={() => { logout(); navigate('/auth'); }}
           className='ml-4 px-4 py-2 rounded text-sm font-medium

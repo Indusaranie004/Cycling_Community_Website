@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/uploadMiddleware');
 const {
     getAllInteractions,
     getInteractionById,
@@ -24,7 +25,8 @@ router.get('/', requireAuth, validateInteractionQuery, getAllInteractions);
 router.get('/:id', requireAuth, validateInteractionId, getInteractionById);
 
 // POST create
-router.post('/', requireAuth, validateCreateInteraction, createInteraction);
+// router.post('/', requireAuth, validateCreateInteraction, createInteraction);
+router.post('/', requireAuth, upload.single('image'), createInteraction);
 
 // PATCH update
 router.patch('/:id', requireAuth, validateUpdateInteraction, checkInteractionOwnership, updateInteraction);
@@ -34,6 +36,7 @@ router.patch('/:id/deactivate', requireAuth, validateInteractionId, checkInterac
 
 // DELETE
 router.delete('/:id', requireAuth, validateInteractionId, checkInteractionOwnership, deleteInteraction);
+
 
 // // /api/interactions
 // router.get('/', getAllInteractions);

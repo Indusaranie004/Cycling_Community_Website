@@ -6,6 +6,7 @@ import MapPage from './pages/MapPage';
 import ProfilePage from './pages/ProfilePage';
 import Navbar from './components/shared/Navbar';
 import HomePage from './pages/HomePage'
+import TempInteractions from './pages/TempInteractions';
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
@@ -23,6 +24,8 @@ export default function App() {
           <Route path='/profile' element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path='*' element={<Navigate to='/' replace />} />
           <Route path='/home' element={<PrivateRoute><HomePage /></PrivateRoute>} />
+          <Route path='/interactions' element={<PrivateRoute><TempInteractions /></PrivateRoute>} />
+          
         </Routes>
       </BrowserRouter>
     </AuthProvider>

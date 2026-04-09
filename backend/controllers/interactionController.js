@@ -37,15 +37,54 @@ const getInteractionById = async (req, res) => {
 };
 
 // create new interaction
+// const createInteraction = async (req, res) => {
+//     try {
+//         const {
+//             routeId, intLatitude, intLongitude,
+//             intType, intDescription, intRating,
+//             severityLevel, intImgUrl, expiryTime, fcmToken
+//         } = req.body;
+
+//         const userId = req.userId; 
+//         if (intType === 'hazard' && !severityLevel) {
+//             return res.status(400).json({ error: 'severityLevel is required for hazard interactions' });
+//         }
+//         if (intType === 'feedback' && !intRating) {
+//             return res.status(400).json({ error: 'intRating is required for feedback interactions' });
+//         }
+
+//         const interaction = await Interaction.create({
+//             userId, routeId, intLatitude, intLongitude,
+//             intType, intDescription, intRating,
+//             severityLevel, intImgUrl, expiryTime, fcmToken
+//         });
+
+//         res.status(201).json(interaction);
+//     } catch (err) {
+//         if (err.name === 'ValidationError') {
+//             return res.status(400).json({ error: err.message });
+//         }
+//         res.status(500).json({ error: err.message });
+//     }
+// };
+
 const createInteraction = async (req, res) => {
     try {
         const {
             routeId, intLatitude, intLongitude,
             intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime, fcmToken
+            severityLevel, expiryTime, fcmToken
         } = req.body;
 
         const userId = req.userId; 
+
+        // 1. Handle the Image URL from Cloudinary
+        // req.file is populated by the 'upload' middleware
+        let intImgUrl = req.body.intImgUrl; // Fallback to URL if provided
+        if (req.file) {
+            intImgUrl = req.file.path; // This is the Cloudinary secure URL
+        }
+
         if (intType === 'hazard' && !severityLevel) {
             return res.status(400).json({ error: 'severityLevel is required for hazard interactions' });
         }
@@ -54,13 +93,22 @@ const createInteraction = async (req, res) => {
         }
 
         const interaction = await Interaction.create({
-            userId, routeId, intLatitude, intLongitude,
-            intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime, fcmToken
+            userId, 
+            routeId, 
+            intLatitude: Number(intLatitude), // Ensure numbers
+            intLongitude: Number(intLongitude),
+            intType, 
+            intDescription, 
+            intRating: Number(intRating),
+            severityLevel, 
+            intImgUrl, // Saved the Cloudinary URL here
+            expiryTime, 
+            fcmToken
         });
 
         res.status(201).json(interaction);
     } catch (err) {
+        console.error("Create error:", err);
         if (err.name === 'ValidationError') {
             return res.status(400).json({ error: err.message });
         }
