@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const Ride = require('../models/Ride');
 const EcoImpact = require('../models/EcoImpact');
 const CommunityStat = require('../models/CommunityStat');
+const User = require('../models/User');
 const { sendMonthlyReport } = require('../utils/emailService');
 
 const scheduleMonthlyEmails = () => {
@@ -20,10 +21,7 @@ const scheduleMonthlyEmails = () => {
         };
       }
 
-      // --- TEMPORARY: DUMMY USERS ---
-      const users = [
-        { _id: '65d4f2a1b9c8d7e6f5a4b3c2', email: 'it23297722@my.sliit.lk', name: 'Test User 1' }
-      ];
+      const users = await User.find().select('_id name email');
 
       for (const user of users) {
         
@@ -48,14 +46,15 @@ const scheduleMonthlyEmails = () => {
           if (aggregation.length > 0) stats = aggregation[0];
         }
 
-        await sendMonthlyReport(user.email, user.name, stats, communityStats);
+        if (stats.totalScore > 0) {
+          await sendMonthlyReport(user.email, user.name, stats, communityStats);
+        }
       }
 
       console.log('✅ Monthly reports sent successfully.');
 
     } catch (error) {
-    console.error(`❌ Error sending email to ${userEmail}:`, error.message);
-    throw error; 
+      console.error(`❌ Cron Job Error (Monthly Reports):`, error.message);
     }
   });
 };
