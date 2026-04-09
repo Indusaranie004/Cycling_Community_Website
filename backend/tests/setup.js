@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 
 let mongoServer;
 
+jest.setTimeout(30000); // 30 seconds
+
 // Start in-memory MongoDB before all tests
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
