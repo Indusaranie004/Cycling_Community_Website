@@ -34,3 +34,15 @@ export const createInteraction = async (formData, token) => {
 
   return res.json();
 };
+
+export const getUserInteractions = async (token) => {
+  const res = await fetch("http://localhost:3001/api/interactions", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch activities");
+  return res.json();
+};
