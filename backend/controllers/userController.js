@@ -13,14 +13,19 @@ const generateToken = (userId, role) => {
 // REGISTER
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, adminSecret } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const user = new User({ name, email, password });
+    let assignedRole = 'user';
+    if (adminSecret && adminSecret === process.env.ADMIN_CREATION_SECRET) {
+      assignedRole = 'admin';
+    }
+
+    const user = new User({ name, email, password, role: assignedRole });
     await user.save();
 
     const token = generateToken(user._id.toString(), user.role);
