@@ -11,7 +11,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login } = useAuth(); 
   const navigate = useNavigate();
 
   const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
