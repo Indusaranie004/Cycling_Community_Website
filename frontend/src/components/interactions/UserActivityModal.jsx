@@ -7,6 +7,30 @@ export default function UserActivityModal({ onClose, token }) {
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
 
+  // --- HELPER FUNCTION FOR ROUNDED TIME ---
+  const getRelativeTime = (expiryDateStr) => {
+    if (!expiryDateStr) return "N/A";
+
+    const expiry = new Date(expiryDateStr);
+    const now = new Date();
+    const diffInMs = expiry - now;
+
+    if (diffInMs <= 0) return "Expired";
+
+    const diffInMins = Math.round(diffInMs / (1000 * 60));
+    const diffInHours = Math.round(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMins < 1) return "Less than 1 min";
+    if (diffInMins < 60) return `${diffInMins} mins`; 
+    // If you specifically want 45 mins to say "1 hr", use:
+    // if (diffInMins < 60) return diffInMins >= 45 ? "1 hr" : `${diffInMins} mins`;
+
+    if (diffInHours < 24) return `${diffInHours} hr${diffInHours > 1 ? 's' : ''}`;
+    
+    return `${diffInDays} day${diffInDays > 1 ? 's' : ''}`;
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -25,7 +49,7 @@ export default function UserActivityModal({ onClose, token }) {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
     try {
       await deleteInteraction(id, token);
-      setActivities(activities.filter(a => a._id !== id)); // Remove from UI
+      setActivities(activities.filter(a => a._id !== id)); 
     } catch (err) {
       alert("Delete failed");
     }
@@ -34,7 +58,7 @@ export default function UserActivityModal({ onClose, token }) {
   const handleUpdate = async (id, formData) => {
     try {
       await updateInteraction(id, formData, token);
-      await loadData(); // Refresh list
+      await loadData(); 
       setEditingItem(null);
     } catch (err) {
       alert("Update failed");
@@ -60,6 +84,7 @@ export default function UserActivityModal({ onClose, token }) {
                   <th className="pb-3">Type</th>
                   <th className="pb-3">Details</th>
                   <th className="pb-3">Status/Rating</th>
+                  <th className="pb-3">Expires In</th> {/* NEW COLUMN */}
                   <th className="pb-3">Photo</th>
                   <th className="pb-3 text-right">Actions</th>
                 </tr>
@@ -76,6 +101,18 @@ export default function UserActivityModal({ onClose, token }) {
                     <td className="py-4 font-medium capitalize">
                       {act.intType === 'hazard' ? act.severityLevel : `⭐ ${act.intRating}`}
                     </td>
+                    
+                    {/* DISPLAY ROUNDED TIME */}
+                    <td className="py-4">
+                      {act.intType === 'hazard' ? (
+                        <span className={act.expiryTime && new Date(act.expiryTime) < new Date() ? "text-red-400" : "text-gray-600"}>
+                          {getRelativeTime(act.expiryTime)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
+
                     <td className="py-4">
                       {act.intImgUrl && <img src={act.intImgUrl} className="w-8 h-8 rounded object-cover border" alt="" />}
                     </td>
@@ -105,7 +142,6 @@ export default function UserActivityModal({ onClose, token }) {
         </div>
       </div>
 
-      {/* NESTED EDIT MODAL */}
       {editingItem && (
         <EditInteraction 
           interaction={editingItem} 

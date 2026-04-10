@@ -11,7 +11,7 @@ export default function CreateInteraction({ onClose, onSubmit }) {
     intLatitude: "",
     intLongitude: "",
     routeId: "", // Added from Schema
-    expiryTime: "", // Added from Schema
+    expiryTime: "3600000", // Added from Schema
     fcmToken: "", // Added from Schema
   });
   const [file, setFile] = useState(null);
@@ -38,52 +38,49 @@ export default function CreateInteraction({ onClose, onSubmit }) {
 
 // CreateInteraction.jsx -> handleSubmit function
 
+// CreateInteraction.jsx
+
 const handleSubmit = async () => {
-  // 1. Validation check
   if (!form.intDescription) return alert("Please add a description");
 
   setLoading(true);
   try {
     const data = new FormData();
     
-    // 2. IMPORTANT: Append text fields FIRST
-    // Ensure we are sending a valid string, defaulting to "hazard"
-    const typeToSend = form.intType || "hazard";
-    data.append("intType", typeToSend);
+    // 1. Append text fields
+    data.append("intType", form.intType);
     data.append("intDescription", form.intDescription);
-
-    // 3. Append other fields
+    
     const savedToken = localStorage.getItem('fcmToken');
     data.append("fcmToken", savedToken || "");
-    
+
     if (form.routeId) data.append("routeId", form.routeId);
 
-    if (typeToSend === "feedback") {
-      data.append("intRating", form.intRating || 5);
-    }
-
-    if (typeToSend === "hazard") {
-      data.append("severityLevel", form.severityLevel || "low");
+    if (form.intType === "feedback") {
+      data.append("intRating", form.intRating);
+    } else {
+      data.append("severityLevel", form.severityLevel);
       if (form.intLatitude) data.append("intLatitude", form.intLatitude);
       if (form.intLongitude) data.append("intLongitude", form.intLongitude);
       
-      if (form.expiryTime) {
-        const dateObj = new Date(form.expiryTime);
-        if (!isNaN(dateObj.getTime())) {
-            data.append("expiryTime", dateObj.toISOString());
+      // --- CALCULATE EXPIRY DATE ---
+        if (form.expiryTime) {
+          const durationMs = parseInt(form.expiryTime);
+          const expiryDate = new Date(Date.now() + durationMs); // Current time + duration
+          data.append("expiryTime", expiryDate.toISOString());
         }
-      }
     }
 
-    // 4. Append file LAST
+    // 2. Append file LAST
     if (file) {
       data.append("image", file);
     }
 
+    // 3. Pass the FormData object to MapPage -> handleCreateSubmit
     await onSubmit(data); 
     onClose(); 
   } catch (err) {
-    alert("Error: " + err.message);
+    alert(err.message);
   } finally {
     setLoading(false);
   }
@@ -145,9 +142,15 @@ const handleSubmit = async () => {
               </div>
             </div>
             
-            {/* Expiry Time - Added from Schema */}
-            <label className={labelClasses}>Report Expiry Time</label>
-            <input name="expiryTime" type="datetime-local" value={form.expiryTime} onChange={handleChange} className={inputClasses} />
+            {/* --- UPDATED EXPIRY TIME DROPDOWN --- */}
+            <label className={labelClasses}>Clear Report After</label>
+            <select name="expiryTime" value={form.expiryTime} onChange={handleChange} className={inputClasses}>
+              <option value="60000">1 Minute (Testing)</option>
+              <option value="3600000">1 Hour</option>
+              <option value="7200000">2 Hours</option>
+              <option value="43200000">12 Hours</option>
+              <option value="86400000">1 Day</option>
+            </select>
           </div>
         )}
 
