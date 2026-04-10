@@ -31,7 +31,7 @@ export default function Navbar() {
       </span>
       <div className='flex items-center gap-2'>
         {navLink('Home', '/home')}
-        {navLink('Map', '/')}
+        {navLink('Map', '/map')}
         {navLink('Profile', '/profile')}
         {navLink('Interactions', '/interactions')}
         <button

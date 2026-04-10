@@ -65,13 +65,13 @@ export default function App() {
       <NotificationHandler /> 
 
       <BrowserRouter>
-        <Navbar />
+      <Navbar />
         <Routes>
           <Route path='/auth' element={<AuthPage />} />
-          <Route path='/' element={<PrivateRoute><MapPage /></PrivateRoute>} />
+          <Route path='/map' element={<PrivateRoute><MapPage /></PrivateRoute>} />
           <Route path='/profile' element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path='*' element={<Navigate to='/' replace />} />
-          <Route path='/home' element={<PrivateRoute><HomePage /></PrivateRoute>} />
+          <Route path='/' element={<PrivateRoute><HomePage /></PrivateRoute>} />
           <Route path='/interactions' element={<PrivateRoute><TempInteractions /></PrivateRoute>} />
           <Route path='/notifications' element={<PrivateRoute><NotificationHistory /></PrivateRoute>} />
           

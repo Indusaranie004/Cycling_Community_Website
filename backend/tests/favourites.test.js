@@ -12,7 +12,15 @@ jest.mock('axios', () => ({
   get: jest.fn((url) => {
     if (url.includes('directions')) {
       return Promise.resolve({
-        data: { routes: [{ distance: 5000, duration: 1200 }] }
+        data: {
+          routes: [{
+            distance: 5000,
+            duration: 1200,
+            geometry: {
+              coordinates: [[80.63, 7.28], [80.64, 7.29]]
+            }
+          }]
+        }
       });
     }
     if (url.includes('geocoding')) {
@@ -27,14 +35,13 @@ jest.mock('axios', () => ({
 beforeEach(async () => {
   const user = new User({
     name: 'Test User',
-    email: `test-${Date.now()}@example.com`,  // Unique email each time
+    email: `test-${Date.now()}@example.com`,
     password: 'password123',
     role: 'user'
   });
   await user.save();
   testUserId = user._id.toString();
 
-  // Generate test token with real user ID
   testToken = jwt.sign(
     { userId: testUserId, role: 'user' },
     process.env.JWT_SECRET,
@@ -47,7 +54,6 @@ describe('ADD Favorite', () => {
   let routeId;
 
   beforeEach(async () => {
-    // Create a test route
     const res = await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -69,12 +75,10 @@ describe('ADD Favorite', () => {
   });
 
   test('Rejects duplicate favorite', async () => {
-    // Add once
     await request(app)
       .post(`/api/favourites/${routeId}`)
       .set('Authorization', `Bearer ${testToken}`);
 
-    // Try to add again
     const res = await request(app)
       .post(`/api/favourites/${routeId}`)
       .set('Authorization', `Bearer ${testToken}`);
@@ -110,7 +114,6 @@ describe('REMOVE Favorite', () => {
   let routeId;
 
   beforeEach(async () => {
-    // Create and favorite a route
     const res = await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -136,7 +139,6 @@ describe('REMOVE Favorite', () => {
   });
 
   test('Rejects removing non-favorited route', async () => {
-    // Create another route (not favorited)
     const res2 = await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -181,7 +183,6 @@ describe('GET Favorites', () => {
   });
 
   test('Returns all favorited routes', async () => {
-    // Create and favorite two routes
     const res1 = await request(app)
       .post('/api/routes/newRoute')
       .set('Authorization', `Bearer ${testToken}`)
@@ -208,7 +209,6 @@ describe('GET Favorites', () => {
       .post(`/api/favourites/${res2.body.route._id}`)
       .set('Authorization', `Bearer ${testToken}`);
 
-    // Get favorites
     const res = await request(app)
       .get('/api/favourites')
       .set('Authorization', `Bearer ${testToken}`);
