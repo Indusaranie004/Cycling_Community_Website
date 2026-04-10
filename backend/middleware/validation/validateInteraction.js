@@ -1,9 +1,19 @@
 const { body, param, query, validationResult } = require("express-validator");
 
+// backend/middleware/validation/validateInteraction.js (or similar)
+
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
+  
+  // 1. ADD THIS LOG HERE:
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array().map((e) => e.msg) });
+    console.log("❌ VALIDATION FAILED!");
+    console.log("Body received by server:", req.body); // Check if intType is here
+    console.log("Errors:", errors.array());
+    
+    return res.status(400).json({ 
+      errors: errors.array().map((e) => e.msg) 
+    });
   }
   next();
 };
@@ -11,14 +21,15 @@ const handleValidationErrors = (req, res, next) => {
 // CREATE validation
 // backend/middleware/validation/interactionValidation.js (or wherever it is)
 
+// backend/middleware/validation/interactionValidation.js
+
 const validateCreateInteraction = [
   body("intType")
     .notEmpty()
     .withMessage("intType is required")
     .isIn(["hazard", "feedback"])
     .withMessage("intType must be either hazard or feedback"),
-    
-  // Add { checkFalsy: true } to all optional numeric/date fields
+
   body("intRating")
     .optional({ checkFalsy: true }) 
     .isInt({ min: 1, max: 5 })
@@ -30,19 +41,19 @@ const validateCreateInteraction = [
     .withMessage("severityLevel must be low, medium, or high"),
 
   body("intLatitude")
-    .optional({ checkFalsy: true }) // 👈 This ignores empty strings
+    .optional({ checkFalsy: true }) // This treats "" as null/ignored
     .isFloat({ min: -90, max: 90 })
-    .withMessage("intLatitude must be between -90 and 90"),
+    .withMessage("intLatitude must be a valid number between -90 and 90"),
 
   body("intLongitude")
-    .optional({ checkFalsy: true }) // 👈 This ignores empty strings
+    .optional({ checkFalsy: true }) // This treats "" as null/ignored
     .isFloat({ min: -180, max: 180 })
-    .withMessage("intLongitude must be between -180 and 180"),
+    .withMessage("intLongitude must be a valid number between -180 and 180"),
 
   body("expiryTime")
     .optional({ checkFalsy: true })
     .isISO8601()
-    .withMessage("expiryTime must be a valid date"),
+    .withMessage("expiryTime must be a valid ISO8601 date"),
 
   handleValidationErrors,
 ];
@@ -104,6 +115,7 @@ const validateInteractionQuery = [
     .withMessage("isActive must be true or false"),
   handleValidationErrors,
 ];
+
 
 module.exports = {
   validateCreateInteraction,

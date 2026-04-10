@@ -34,51 +34,56 @@ export default function CreateInteraction({ onClose, onSubmit }) {
     }
   };
 
-  const handleSubmit = async () => {
+  // CreateInteraction.jsx -> handleSubmit function
+
+// CreateInteraction.jsx -> handleSubmit function
+
+const handleSubmit = async () => {
+  // 1. Validation check
   if (!form.intDescription) return alert("Please add a description");
-  
-  // Validation for Hazards
-  if (form.intType === "hazard") {
-    if (!form.intLatitude || !form.intLongitude) {
-      return alert("Coordinates are required for hazards");
-    }
-  }
 
   setLoading(true);
   try {
     const data = new FormData();
-    const savedToken = localStorage.getItem('fcmToken');
-
-    data.append("intType", form.intType);
+    
+    // 2. IMPORTANT: Append text fields FIRST
+    // Ensure we are sending a valid string, defaulting to "hazard"
+    const typeToSend = form.intType || "hazard";
+    data.append("intType", typeToSend);
     data.append("intDescription", form.intDescription);
-    data.append("fcmToken", savedToken || "");
-    data.append("routeId", form.routeId || "");
 
-    if (form.intType === "feedback") {
-      data.append("intRating", form.intRating);
+    // 3. Append other fields
+    const savedToken = localStorage.getItem('fcmToken');
+    data.append("fcmToken", savedToken || "");
+    
+    if (form.routeId) data.append("routeId", form.routeId);
+
+    if (typeToSend === "feedback") {
+      data.append("intRating", form.intRating || 5);
     }
 
-    if (form.intType === "hazard") {
-      data.append("severityLevel", form.severityLevel);
-      // Ensure these are only appended if they have values
+    if (typeToSend === "hazard") {
+      data.append("severityLevel", form.severityLevel || "low");
       if (form.intLatitude) data.append("intLatitude", form.intLatitude);
       if (form.intLongitude) data.append("intLongitude", form.intLongitude);
-
+      
       if (form.expiryTime) {
-        const durationMs = parseInt(form.expiryTime);
-        const expiryTimestamp = new Date(Date.now() + durationMs).toISOString();
-        data.append("expiryTime", expiryTimestamp);
+        const dateObj = new Date(form.expiryTime);
+        if (!isNaN(dateObj.getTime())) {
+            data.append("expiryTime", dateObj.toISOString());
+        }
       }
     }
 
+    // 4. Append file LAST
     if (file) {
       data.append("image", file);
     }
 
-    await onSubmit(data);
-    onClose(); // Close modal on success
+    await onSubmit(data); 
+    onClose(); 
   } catch (err) {
-    alert("Submission Error: " + err.message);
+    alert("Error: " + err.message);
   } finally {
     setLoading(false);
   }
