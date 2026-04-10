@@ -5,7 +5,7 @@ const FILTERS = [
   { key: 'saved',    label: 'Saved'     },
 ];
 
-export default function FilterPanel({ activeFilter, onChange }) {
+export default function FilterPanel({ activeFilter, onChange, variant = 'dropdown' }) {
   const [open, setOpen] = useState(false);
 
   const handleToggle = (key) => {
@@ -18,10 +18,37 @@ export default function FilterPanel({ activeFilter, onChange }) {
 
   const isFiltered = activeFilter !== 'public';
 
+  if (variant === 'inline') {
+    const chips = [
+      { key: 'public', label: 'All Routes' },
+      ...FILTERS,
+    ];
+
+    return (
+      <div className='flex flex-wrap gap-2'>
+        {chips.map(chip => {
+          const active = activeFilter === chip.key;
+          return (
+            <button
+              key={chip.key}
+              onClick={() => onChange(chip.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors
+                ${active
+                  ? 'bg-brand-dark text-brand-cream border-brand-dark'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-dark hover:text-brand-dark'}`}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Trigger button — top right, shows active state indicator */}
-      <div className='absolute top-20 right-4 z-10'>
+      <div className='relative z-10'>
         <button
           onClick={() => setOpen(o => !o)}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold

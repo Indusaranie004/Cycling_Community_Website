@@ -18,7 +18,7 @@ const ZOOM_THRESHOLD = 11;
 
 export default function MapContainer({
   mode, routes, waypoints, selectedRoute,
-  mapCenter, activeFilter, zoom, onZoomChange,
+  mapCenter, focusCoordinates, activeFilter, zoom, onZoomChange,
   onMapClick, onRouteClick, onWaypointRemove,
 }) {
   const mapRef = useRef();
@@ -31,6 +31,23 @@ export default function MapContainer({
       mapRef.current.flyTo({ center: mapCenter, zoom: 13, duration: 1400 });
     }
   }, [mapCenter]);
+
+  // Fit map to a route (used after successful update save)
+  useEffect(() => {
+    if (!focusCoordinates || focusCoordinates.length < 2 || !mapRef.current) return;
+
+    const lats = focusCoordinates.map(([, lat]) => lat);
+    const lngs = focusCoordinates.map(([lng]) => lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+
+    mapRef.current.fitBounds(
+      [[minLng, minLat], [maxLng, maxLat]],
+      { padding: 80, duration: 1200, maxZoom: 14 }
+    );
+  }, [focusCoordinates]);
 
   // Only register line layers as interactive when zoomed in enough to see them
   const interactiveLayerIds = zoom >= ZOOM_THRESHOLD
@@ -88,6 +105,10 @@ export default function MapContainer({
         onMouseLeave={handleMouseLeave}
         interactiveLayerIds={interactiveLayerIds}
         cursor={cursor}
+        dragPan={true}
+        touchPan={true}
+        touchZoomRotate={true}
+        cooperativeGestures={false}
       >
         <RouteLayer
           routes={routes}

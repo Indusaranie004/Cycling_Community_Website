@@ -1,10 +1,10 @@
 import React from 'react';
+import { formatDurationMinutes } from '../../utils/timeFormat';
 
 export default function CreateModeStats({ stats }) {
   if (!stats) return null;
 
   const fmt = (m) => (m / 1000).toFixed(1) + ' km';
-  const fmtTime = (min) => `${Math.round(min)} min`;
 
   return (
     <div className='absolute top-16 left-1/2 -translate-x-1/2 z-10
@@ -17,7 +17,7 @@ export default function CreateModeStats({ stats }) {
       </span>
       <span className='text-gray-600'>|</span>
       <span>
-        <span className='font-bold text-brand-orange'>{fmtTime(stats.estimatedTime)}</span>
+        <span className='font-bold text-brand-orange'>{formatDurationMinutes(stats.estimatedTime)}</span>
         <span className='text-xs ml-1 text-gray-400'>est. time</span>
       </span>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDurationMinutes } from '../../utils/timeFormat';
 
 export default function RouteDetailsPanel({
   route, userId, isSaved, onToggleSave, onDelete, onClose
@@ -12,7 +13,7 @@ export default function RouteDetailsPanel({
   };
 
   const fmt = (m) => (m / 1000).toFixed(1) + ' km';
-  const fmtTime = (min) => `${Math.round(min)} min`;
+  const fmtTime = formatDurationMinutes;
 
   return (
     <div className='absolute top-14 right-0 bottom-0 z-10 w-80
@@ -50,8 +51,8 @@ export default function RouteDetailsPanel({
         <div className='flex gap-2'>
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium
             ${route.isPublic
-              ? 'bg-brand-sage/30 text-brand-dark'
-              : 'bg-gray-200 text-gray-600'}`}>
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'}`}>
             {route.isPublic ? 'Public' : 'Private'}
           </span>
         </div>
