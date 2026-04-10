@@ -53,6 +53,7 @@ function NotificationHandler() {
 }
 
 
+
 function PrivateRoute({ children }) {
   const { token } = useAuth();
   return token ? children : <Navigate to='/auth' replace />;
