@@ -46,3 +46,35 @@ export const getUserInteractions = async (token) => {
   if (!res.ok) throw new Error("Failed to fetch activities");
   return res.json();
 };
+
+// Update an existing interaction
+export const updateInteraction = async (id, formData, token) => {
+  const res = await fetch(`http://localhost:3001/api/interactions/${id}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const data = await res.json(); // 👈 always read response
+
+  if (!res.ok) {
+    console.error("BACKEND ERROR:", data); // 👈 THIS is what we need
+    throw new Error(data.error || JSON.stringify(data));
+  }
+
+  return data;
+};
+
+// Delete an interaction
+export const deleteInteraction = async (id, token) => {
+  const res = await fetch(`http://localhost:3001/api/interactions/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error("Failed to delete interaction");
+  return res.json();
+};

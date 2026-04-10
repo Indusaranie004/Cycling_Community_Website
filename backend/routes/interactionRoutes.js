@@ -29,7 +29,14 @@ router.get('/:id', requireAuth, validateInteractionId, getInteractionById);
 router.post('/', requireAuth, upload.single('image'), createInteraction);
 
 // PATCH update
-router.patch('/:id', requireAuth, validateUpdateInteraction, checkInteractionOwnership, updateInteraction);
+// router.patch('/:id', requireAuth, validateUpdateInteraction, checkInteractionOwnership, updateInteraction);
+router.patch('/:id',
+  requireAuth,
+  upload.single('image'),   // ✅ ADD THIS
+  validateUpdateInteraction,
+  checkInteractionOwnership,
+  updateInteraction
+);
 
 // PATCH deactivate
 router.patch('/:id/deactivate', requireAuth, validateInteractionId, checkInteractionOwnership, deactivateInteraction);
