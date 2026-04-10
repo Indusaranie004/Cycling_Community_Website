@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/uploadMiddleware');
 const {
     getAllInteractions,
     getInteractionById,
@@ -17,32 +18,64 @@ const {
     validateInteractionQuery
 } = require('../middleware/validation/validateInteraction');
 
+// --- ROUTES ---
+
 // GET all
 router.get('/', requireAuth, validateInteractionQuery, getAllInteractions);
 
 // GET single
 router.get('/:id', requireAuth, validateInteractionId, getInteractionById);
 
-// POST create
-router.post('/', requireAuth, validateCreateInteraction, createInteraction);
+/**
+ * POST Create Interaction
+ * Order:
+ * 1. requireAuth: Check login
+ * 2. upload.single('image'): Process FormData and Image (Populates req.body)
+ * 3. validateCreateInteraction: Check if fields are correct
+ * 4. createInteraction: Save to DB
+ */
+router.post(
+    '/', 
+    requireAuth, 
+    upload.single('image'), 
+    validateCreateInteraction, // <--- Add this back!
+    createInteraction
+);
 
-// PATCH update
-router.patch('/:id', requireAuth, validateUpdateInteraction, checkInteractionOwnership, updateInteraction);
+/**
+ * PATCH Update Interaction
+ * Order:
+ * 1. requireAuth: Check login
+ * 2. upload.single('image'): Process FormData (Populates req.body)
+ * 3. validateUpdateInteraction: Check updated fields
+ * 4. checkInteractionOwnership: Check if user is allowed to edit this
+ * 5. updateInteraction: Save changes
+ */
+router.patch(
+    '/:id',
+    requireAuth,
+    upload.single('image'),
+    validateUpdateInteraction,
+    checkInteractionOwnership,
+    updateInteraction
+);
 
-// PATCH deactivate
-router.patch('/:id/deactivate', requireAuth, validateInteractionId, checkInteractionOwnership, deactivateInteraction);
+// PATCH Deactivate
+router.patch(
+    '/:id/deactivate', 
+    requireAuth, 
+    validateInteractionId, 
+    checkInteractionOwnership, 
+    deactivateInteraction
+);
 
 // DELETE
-router.delete('/:id', requireAuth, validateInteractionId, checkInteractionOwnership, deleteInteraction);
-
-// // /api/interactions
-// router.get('/', getAllInteractions);
-// router.post('/', createInteraction);
-
-// // /api/interactions/:id
-// router.get('/:id', getInteractionById);
-// router.patch('/:id', updateInteraction);
-// router.patch('/:id/deactivate', deactivateInteraction);
-// router.delete('/:id', deleteInteraction);
+router.delete(
+    '/:id', 
+    requireAuth, 
+    validateInteractionId, 
+    checkInteractionOwnership, 
+    deleteInteraction
+);
 
 module.exports = router;
