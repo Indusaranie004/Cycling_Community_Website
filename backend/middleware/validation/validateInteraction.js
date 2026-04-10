@@ -9,32 +9,41 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // CREATE validation
+// backend/middleware/validation/interactionValidation.js (or wherever it is)
+
 const validateCreateInteraction = [
   body("intType")
     .notEmpty()
     .withMessage("intType is required")
     .isIn(["hazard", "feedback"])
     .withMessage("intType must be either hazard or feedback"),
+    
+  // Add { checkFalsy: true } to all optional numeric/date fields
   body("intRating")
-    .optional()
+    .optional({ checkFalsy: true }) 
     .isInt({ min: 1, max: 5 })
     .withMessage("intRating must be between 1 and 5"),
+
   body("severityLevel")
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(["low", "medium", "high"])
     .withMessage("severityLevel must be low, medium, or high"),
+
   body("intLatitude")
-    .optional()
+    .optional({ checkFalsy: true }) // 👈 This ignores empty strings
     .isFloat({ min: -90, max: 90 })
     .withMessage("intLatitude must be between -90 and 90"),
+
   body("intLongitude")
-    .optional()
+    .optional({ checkFalsy: true }) // 👈 This ignores empty strings
     .isFloat({ min: -180, max: 180 })
     .withMessage("intLongitude must be between -180 and 180"),
+
   body("expiryTime")
-    .optional()
+    .optional({ checkFalsy: true })
     .isISO8601()
     .withMessage("expiryTime must be a valid date"),
+
   handleValidationErrors,
 ];
 

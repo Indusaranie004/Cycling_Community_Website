@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
@@ -7,6 +7,51 @@ import ProfilePage from './pages/ProfilePage';
 import Navbar from './components/shared/Navbar';
 import HomePage from './pages/HomePage'
 import TempInteractions from './pages/TempInteractions';
+import NotificationHistory from './pages/NotificationHistory';
+
+import { requestForToken, onMessageListener } from './firebase-config';
+import axios from 'axios';
+
+//Notification Handler
+function NotificationHandler() {
+  const { token } = useAuth();
+
+  useEffect(() => {
+    // Only attempt to register notifications if the user is logged in
+    if (token) {
+      const setupNotifications = async () => {
+        try {
+          // 1. Request permission and get the FCM token
+          await requestForToken(async (fcmToken) => {
+            // 2. Send the token to your backend API
+            await axios.patch(
+              'http://localhost:3001/api/notifications/update-fcm', 
+              { fcmToken },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            console.log("FCM Token synced with backend");
+          });
+
+          // 3. Listen for notifications while the app is in the foreground
+          onMessageListener()
+            .then((payload) => {
+              // You can replace this alert with a Toast library like react-hot-toast
+              alert(`${payload.notification.title}\n${payload.notification.body}`);
+            })
+            .catch((err) => console.log('Message listener error: ', err));
+
+        } catch (error) {
+          console.error("Error setting up notifications:", error);
+        }
+      };
+
+      setupNotifications();
+    }
+  }, [token]);
+
+  return null; // This component doesn't render any UI
+}
+
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
@@ -16,6 +61,9 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <AuthProvider>
+       {/* Logic for notifications starts once AuthProvider is ready */}
+      <NotificationHandler /> 
+
       <BrowserRouter>
         <Navbar />
         <Routes>
@@ -25,6 +73,7 @@ export default function App() {
           <Route path='*' element={<Navigate to='/' replace />} />
           <Route path='/home' element={<PrivateRoute><HomePage /></PrivateRoute>} />
           <Route path='/interactions' element={<PrivateRoute><TempInteractions /></PrivateRoute>} />
+          <Route path='/notifications' element={<PrivateRoute><NotificationHistory /></PrivateRoute>} />
           
         </Routes>
       </BrowserRouter>

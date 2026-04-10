@@ -17,22 +17,22 @@
 // };
 
 export const createInteraction = async (formData, token) => {
-  // formData here is a New FormData() object
   const res = await fetch("http://localhost:3001/api/interactions", {
     method: "POST",
     headers: {
-      // "Content-Type" is OMITTED here so the browser sets it automatically
       Authorization: `Bearer ${token}`,
     },
     body: formData, 
   });
 
+  const data = await res.json(); // 👈 Read the actual response from the backend
+
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Failed to create interaction");
+    console.error("BACKEND 400 ERROR:", data); // 👈 THIS WILL TELL US THE EXACT PROBLEM
+    throw new Error(data.message || data.error || "Failed to create interaction");
   }
 
-  return res.json();
+  return data;
 };
 
 export const getUserInteractions = async (token) => {

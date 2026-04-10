@@ -35,46 +35,54 @@ export default function CreateInteraction({ onClose, onSubmit }) {
   };
 
   const handleSubmit = async () => {
-    if (!form.intDescription) return alert("Please add a description");
-    if (form.intType === "hazard" && (!form.intLatitude || !form.intLongitude)) {
+  if (!form.intDescription) return alert("Please add a description");
+  
+  // Validation for Hazards
+  if (form.intType === "hazard") {
+    if (!form.intLatitude || !form.intLongitude) {
       return alert("Coordinates are required for hazards");
     }
+  }
 
-    setLoading(true);
-    try {
-      const data = new FormData();
+  setLoading(true);
+  try {
+    const data = new FormData();
+    const savedToken = localStorage.getItem('fcmToken');
 
-// Common fields
-data.append("intType", form.intType);
-data.append("intDescription", form.intDescription);
+    data.append("intType", form.intType);
+    data.append("intDescription", form.intDescription);
+    data.append("fcmToken", savedToken || "");
+    data.append("routeId", form.routeId || "");
 
-if (form.routeId) data.append("routeId", form.routeId);
-if (form.fcmToken) data.append("fcmToken", form.fcmToken);
-
-// Feedback
-if (form.intType === "feedback") {
-  data.append("intRating", form.intRating);
-}
-
-// Hazard
-if (form.intType === "hazard") {
-  data.append("severityLevel", form.severityLevel);
-  data.append("intLatitude", form.intLatitude);
-  data.append("intLongitude", form.intLongitude);
-  if (form.expiryTime) data.append("expiryTime", form.expiryTime);
-}
-
-// Image
-if (file) {
-  data.append("image", file);
-}
-      await onSubmit(data);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
+    if (form.intType === "feedback") {
+      data.append("intRating", form.intRating);
     }
-  };
+
+    if (form.intType === "hazard") {
+      data.append("severityLevel", form.severityLevel);
+      // Ensure these are only appended if they have values
+      if (form.intLatitude) data.append("intLatitude", form.intLatitude);
+      if (form.intLongitude) data.append("intLongitude", form.intLongitude);
+
+      if (form.expiryTime) {
+        const durationMs = parseInt(form.expiryTime);
+        const expiryTimestamp = new Date(Date.now() + durationMs).toISOString();
+        data.append("expiryTime", expiryTimestamp);
+      }
+    }
+
+    if (file) {
+      data.append("image", file);
+    }
+
+    await onSubmit(data);
+    onClose(); // Close modal on success
+  } catch (err) {
+    alert("Submission Error: " + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const inputClasses = "w-full border border-brand-sage/40 rounded-lg p-2.5 mb-4 focus:ring-2 focus:ring-brand-orange outline-none bg-white text-brand-dark transition-all";
   const labelClasses = "block text-xs font-bold uppercase tracking-wider text-brand-dark/70 mb-1 ml-1";
