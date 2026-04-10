@@ -2,13 +2,18 @@ import React from 'react';
 import { Source, Layer, Marker } from 'react-map-gl';
 
 const ZOOM_THRESHOLD = 11;
+const SELECTED_ROUTE_COLOUR = '#FF1B1C';
 
 export default function RouteLayer({ routes, lineColor, selectedRouteId, onRouteClick, zoom }) {
   const showLines = zoom >= ZOOM_THRESHOLD;
+  const orderedRoutes = [
+    ...routes.filter(route => route._id !== selectedRouteId),
+    ...routes.filter(route => route._id === selectedRouteId),
+  ];
 
   return (
     <>
-      {routes.map(route => {
+      {orderedRoutes.map(route => {
         if (!route.coordinates || route.coordinates.length < 2) return null;
 
         const isSelected = route._id === selectedRouteId;
@@ -40,7 +45,7 @@ export default function RouteLayer({ routes, lineColor, selectedRouteId, onRoute
                   id={`line-${route._id}`}
                   type='line'
                   paint={{
-                    'line-color': lineColor,
+                    'line-color': isSelected ? SELECTED_ROUTE_COLOUR : lineColor,
                     'line-width': isSelected ? 6 : 3,
                     'line-opacity': isSelected ? 1 : 0.85,
                   }}

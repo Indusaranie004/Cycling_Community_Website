@@ -1,18 +1,80 @@
 import React, { useState } from 'react';
+import { formatDurationMinutes } from '../../utils/timeFormat';
+
+function VisibilityBadge({ isPublic }) {
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+      ${isPublic ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {isPublic ? 'Public' : 'Private'}
+    </span>
+  );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className='bg-gray-50 rounded-2xl p-4 text-center border border-gray-100'>
+      <p className='text-3xl font-bold text-brand-dark leading-tight'>{value}</p>
+      <p className='text-xs text-gray-400 mt-1'>{label}</p>
+    </div>
+  );
+}
+
+function PanelButton({ children, className = '', ...props }) {
+  return (
+    <button
+      {...props}
+      className={`w-full py-3 rounded-2xl text-sm font-semibold transition-colors ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RouteCard({ route, onSelectRoute, fmt, fmtTime }) {
+  return (
+    <button
+      onClick={() => onSelectRoute(route)}
+      className='w-full text-left bg-gray-50 hover:bg-brand-sage/15 rounded-2xl p-4
+        transition-colors border border-gray-100 hover:border-brand-sage/40'
+    >
+      <div className='flex items-start justify-between gap-2'>
+        <p className='text-sm font-semibold text-brand-dark truncate'>{route.name}</p>
+        <VisibilityBadge isPublic={route.isPublic} />
+      </div>
+      <p className='text-xs text-gray-400 mt-1 truncate'>
+        {route.startLocation || 'Start'} -> {route.endLocation || 'End'}
+      </p>
+      <div className='flex items-center gap-2 mt-3'>
+        <span className='text-xs font-semibold text-brand-dark'>{fmt(route.distance)}</span>
+        <span className='text-gray-300 text-xs'>|</span>
+        <span className='text-xs text-gray-400'>{fmtTime(route.estimatedTime)}</span>
+      </div>
+    </button>
+  );
+}
 
 export default function SidePanel({
   view,
-  nearbyRoutes,
+  routesList,
+  listTitle = 'Routes',
+  emptyMessage = 'No routes found.',
   selectedRoute,
+  isEditing,
+  editDraft,
+  liveStats,
   userId,
   savedRouteIds,
-  hasNearbyList,
+  hasList,
   onSelectRoute,
   onBackToList,
   onToggleSave,
   onDelete,
   onUpdate,
+  onEditDraftChange,
+  onSaveEdit,
+  onCancelEdit,
   onClose,
+  embedded = false,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -20,7 +82,14 @@ export default function SidePanel({
   const isSaved = selectedRoute && savedRouteIds.has(selectedRoute._id);
 
   const fmt = (m) => (m / 1000).toFixed(1) + ' km';
-  const fmtTime = (min) => `${Math.round(min)} min`;
+  const fmtTime = formatDurationMinutes;
+  const scrollablePanelClass = 'panel-scrollbar';
+  const panelTitle = view === 'detail' && selectedRoute
+    ? selectedRoute.name
+    : `${listTitle} (${routesList.length})`;
+  const detailDistance = isEditing && liveStats ? liveStats.distance : selectedRoute?.distance;
+  const detailTime = isEditing && liveStats ? liveStats.estimatedTime : selectedRoute?.estimatedTime;
+  const canSubmitEdit = !!editDraft?.name?.trim();
 
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
@@ -29,33 +98,34 @@ export default function SidePanel({
   };
 
   return (
-    <div className='absolute top-4 left-4 bottom-4 z-20 w-80
-      flex flex-col bg-white shadow-2xl rounded-2xl overflow-hidden'>
+    <div className={`${embedded
+      ? 'w-full h-full'
+      : 'w-80 max-h-[calc(100vh-7.5rem)] shadow-2xl rounded-3xl border border-gray-200'}
+      flex flex-col bg-white overflow-hidden`}>
 
       {/* Header */}
-      <div className='flex items-center justify-between px-4 py-3
-        bg-brand-dark text-brand-cream flex-shrink-0'>
+      <div className={`${embedded ? '' : 'drag-handle cursor-move select-none'}
+        flex items-center justify-between px-4 py-4 flex-shrink-0
+        ${embedded ? 'bg-gray-50 text-brand-dark border-b border-gray-100' : 'bg-brand-dark text-brand-cream'}`}>
         <div className='flex items-center gap-2 min-w-0'>
-          {/* Back arrow — only shown in detail view when a list exists to return to */}
-          {view === 'detail' && hasNearbyList && (
+          {view === 'detail' && hasList && (
             <button
               onClick={onBackToList}
-              className='text-brand-sage hover:text-brand-cream transition-colors
-                text-lg leading-none flex-shrink-0'
+              className={`${embedded
+                ? 'text-brand-dark/70 hover:text-brand-dark'
+                : 'text-brand-sage hover:text-brand-cream'}
+                transition-colors text-xl leading-none flex-shrink-0`}
               title='Back to list'
             >
               ←
             </button>
           )}
-          <h2 className='font-semibold text-sm truncate'>
-            {view === 'detail' && selectedRoute
-              ? selectedRoute.name
-              : `Nearby Routes (${nearbyRoutes.length})`}
-          </h2>
+          <h2 className='font-semibold text-sm truncate'>{panelTitle}</h2>
         </div>
         <button
           onClick={onClose}
-          className='ml-2 text-xl leading-none hover:opacity-70 flex-shrink-0'
+          className={`ml-2 text-xl leading-none hover:opacity-70 flex-shrink-0
+            ${embedded ? 'text-gray-500' : 'text-brand-cream/90'}`}
         >
           ×
         </button>
@@ -63,46 +133,20 @@ export default function SidePanel({
 
       {/* List View */}
       {view === 'list' && (
-        <div className='flex-1 overflow-y-auto p-3 space-y-2'>
-          {nearbyRoutes.length === 0 ? (
+        <div className={`flex-1 overflow-y-scroll p-3 space-y-3 bg-white ${scrollablePanelClass}`}>
+          {routesList.length === 0 ? (
             <p className='text-sm text-gray-400 text-center mt-12 px-4'>
-              No routes found nearby.
-              <br />
-              <span className='text-xs mt-1 block'>Try searching from a different location.</span>
+              {emptyMessage}
             </p>
           ) : (
-            nearbyRoutes.map(route => (
-              <button
+            routesList.map(route => (
+              <RouteCard
                 key={route._id}
-                onClick={() => onSelectRoute(route)}
-                className='w-full text-left bg-gray-50 hover:bg-brand-sage/20
-                  rounded-xl p-3 transition-colors border border-gray-100
-                  hover:border-brand-sage/40 group'
-              >
-                <p className='text-sm font-semibold text-brand-dark truncate
-                  group-hover:text-brand-dark'>
-                  {route.name}
-                </p>
-                <p className='text-xs text-gray-400 mt-0.5 truncate'>
-                  {route.startLocation || 'Start'} → {route.endLocation || 'End'}
-                </p>
-                <div className='flex items-center gap-2 mt-2'>
-                  <span className='text-xs font-medium text-brand-dark'>
-                    {fmt(route.distance)}
-                  </span>
-                  <span className='text-gray-300 text-xs'>·</span>
-                  <span className='text-xs text-gray-400'>
-                    {fmtTime(route.estimatedTime)}
-                  </span>
-                  <span className='text-gray-300 text-xs'>·</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
-                    ${route.isPublic
-                      ? 'bg-brand-sage/25 text-brand-dark'
-                      : 'bg-gray-200 text-gray-500'}`}>
-                    {route.isPublic ? 'Public' : 'Private'}
-                  </span>
-                </div>
-              </button>
+                route={route}
+                onSelectRoute={onSelectRoute}
+                fmt={fmt}
+                fmtTime={fmtTime}
+              />
             ))
           )}
         </div>
@@ -111,81 +155,134 @@ export default function SidePanel({
       {/* Detail View */}
       {view === 'detail' && selectedRoute && (
         <div className='flex-1 flex flex-col overflow-hidden'>
-          {/* Scrollable body */}
-          <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+          <div className={`flex-1 overflow-y-scroll p-4 space-y-4 bg-white ${scrollablePanelClass}`}>
+            {isEditing ? (
+              <>
+                <div className='bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3'>
+                  <div>
+                    <label className='text-xs text-gray-500 block mb-1'>Route name</label>
+                    <input
+                      type='text'
+                      value={editDraft?.name || ''}
+                      onChange={(e) => onEditDraftChange(prev => ({ ...prev, name: e.target.value }))}
+                      className='w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
+                        text-brand-dark focus:outline-none focus:border-brand-sage'
+                      placeholder='Route name'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-xs text-gray-500 block mb-1'>Origin</label>
+                    <input
+                      type='text'
+                      value={editDraft?.startLocation || ''}
+                      onChange={(e) => onEditDraftChange(prev => ({ ...prev, startLocation: e.target.value }))}
+                      className='w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
+                        text-brand-dark focus:outline-none focus:border-brand-sage'
+                      placeholder='Start location'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-xs text-gray-500 block mb-1'>Destination</label>
+                    <input
+                      type='text'
+                      value={editDraft?.endLocation || ''}
+                      onChange={(e) => onEditDraftChange(prev => ({ ...prev, endLocation: e.target.value }))}
+                      className='w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
+                        text-brand-dark focus:outline-none focus:border-brand-sage'
+                      placeholder='End location'
+                    />
+                  </div>
+                  <div className='flex items-center gap-2 pt-1'>
+                    {['Public', 'Private'].map(opt => {
+                      const nextPublic = opt === 'Public';
+                      const active = !!editDraft?.isPublic === nextPublic;
+                      return (
+                        <button
+                          key={opt}
+                          type='button'
+                          onClick={() => onEditDraftChange(prev => ({ ...prev, isPublic: nextPublic }))}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors
+                            ${active
+                              ? 'bg-brand-sage text-brand-dark'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <VisibilityBadge isPublic={selectedRoute.isPublic} />
+              </div>
+            )}
 
-            {/* Visibility badge — immediately below name (which is in header) */}
-            <div>
-              <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium
-                ${selectedRoute.isPublic
-                  ? 'bg-brand-sage/30 text-brand-dark'
-                  : 'bg-gray-200 text-gray-600'}`}>
-                {selectedRoute.isPublic ? 'Public' : 'Private'}
-              </span>
-            </div>
-
-            {/* Origin and Destination */}
-            <div className='bg-gray-50 rounded-xl p-3'>
+            <div className='bg-gray-50 rounded-2xl p-4 border border-gray-100'>
               <p className='text-xs text-gray-400 uppercase tracking-wide mb-2'>Route</p>
               <div className='flex items-start gap-2'>
                 <span className='w-2.5 h-2.5 rounded-full bg-brand-sage mt-1 flex-shrink-0' />
                 <p className='text-sm text-brand-dark leading-snug break-words'>
-                  {selectedRoute.startLocation || 'Start point'}
+                  {(isEditing ? editDraft?.startLocation : selectedRoute.startLocation) || 'Start point'}
                 </p>
               </div>
               <div className='ml-1 my-1 border-l-2 border-dashed border-gray-300 h-4' />
               <div className='flex items-start gap-2'>
                 <span className='w-2.5 h-2.5 rounded-full bg-brand-orange mt-1 flex-shrink-0' />
                 <p className='text-sm text-brand-dark leading-snug break-words'>
-                  {selectedRoute.endLocation || 'End point'}
+                  {(isEditing ? editDraft?.endLocation : selectedRoute.endLocation) || 'End point'}
                 </p>
               </div>
             </div>
 
-            {/* Distance and estimated time */}
             <div className='grid grid-cols-2 gap-3'>
-              <div className='bg-gray-50 rounded-xl p-3 text-center'>
-                <p className='text-lg font-bold text-brand-dark'>
-                  {fmt(selectedRoute.distance)}
-                </p>
-                <p className='text-xs text-gray-400 mt-0.5'>Distance</p>
-              </div>
-              <div className='bg-gray-50 rounded-xl p-3 text-center'>
-                <p className='text-lg font-bold text-brand-dark'>
-                  {fmtTime(selectedRoute.estimatedTime)}
-                </p>
-                <p className='text-xs text-gray-400 mt-0.5'>Est. Time</p>
-              </div>
+              <MetricCard label='Distance' value={fmt(detailDistance || 0)} />
+              <MetricCard label='Est. Time' value={fmtTime(detailTime || 0)} />
             </div>
           </div>
 
-          {/* Action buttons — pinned to bottom, not scrollable */}
-          <div className='p-4 border-t border-gray-100 space-y-2 flex-shrink-0'>
-            <button
-              onClick={() => onToggleSave(selectedRoute._id)}
-              className='w-full py-2.5 rounded-xl text-sm font-semibold transition-colors
-                bg-brand-dark text-brand-cream
-                hover:bg-brand-sage hover:text-brand-dark'
-            >
-              {isSaved ? 'Unsave Route' : 'Save Route'}
-            </button>
-            {isOwner && (
+          <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
+            {isEditing ? (
               <>
-                <button
-                  onClick={() => onUpdate(selectedRoute)}
-                  className='w-full py-2.5 rounded-xl text-sm font-semibold transition-colors
-                    border-2 border-brand-dark text-brand-dark
-                    hover:bg-brand-sage/20 hover:border-brand-sage'
+                <PanelButton
+                  onClick={onSaveEdit}
+                  disabled={!canSubmitEdit}
+                  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark disabled:opacity-50 disabled:cursor-not-allowed'
                 >
-                  Update Route
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className='w-full py-2.5 rounded-xl text-sm font-semibold transition-colors
-                    bg-brand-red text-white hover:opacity-80'
+                  Save Updated Route
+                </PanelButton>
+                <PanelButton
+                  onClick={onCancelEdit}
+                  className='border-2 border-brand-dark text-brand-dark hover:bg-brand-sage/20 hover:border-brand-sage'
                 >
-                  {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
-                </button>
+                  Cancel Update
+                </PanelButton>
+              </>
+            ) : (
+              <>
+                <PanelButton
+                  onClick={() => onToggleSave(selectedRoute._id)}
+                  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
+                >
+                  {isSaved ? 'Unsave Route' : 'Save Route'}
+                </PanelButton>
+                {isOwner && (
+                  <>
+                    <PanelButton
+                      onClick={() => onUpdate(selectedRoute)}
+                      className='border-2 border-brand-dark text-brand-dark hover:bg-brand-sage/20 hover:border-brand-sage'
+                    >
+                      Update Route
+                    </PanelButton>
+                    <PanelButton
+                      onClick={handleDelete}
+                      className='bg-brand-red text-white hover:opacity-80'
+                    >
+                      {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
+                    </PanelButton>
+                  </>
+                )}
               </>
             )}
           </div>
