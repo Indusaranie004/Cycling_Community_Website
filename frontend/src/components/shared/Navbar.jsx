@@ -6,9 +6,6 @@ export default function Navbar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { token } = useAuth(); 
-
-  if (!token) return null;
 
   const navLink = (label, path) => (
     <button
@@ -27,7 +24,7 @@ export default function Navbar() {
       bg-brand-dark flex items-center
       justify-between px-6 h-14'>
       <span className='text-brand-cream font-bold text-lg tracking-wide'>
-        Routify
+        EcoRide
       </span>
       <div className='flex items-center gap-2'>
         {navLink('Map', '/')}
