@@ -16,11 +16,12 @@ const UserSchema = new mongoose.Schema({
 });
 
 const RouteSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Route' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Fixed ref to User
   name: String,
   startLocation: String,
   endLocation: String,
-  coordinates: [[Number]],
+  waypoints: [[Number]], // Added for editing (small array)
+  coordinates: [[Number]], // Detailed snapped geometry
   distance: Number,
   estimatedTime: Number,
   isPublic: { type: Boolean, default: true },
@@ -32,6 +33,28 @@ const RouteSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 const Route = mongoose.model('Route', RouteSchema);
+
+// --- Helpers ---
+
+/**
+ * Samples a large coordinate array down to a maximum number of points.
+ * Ensures the first and last points are always included.
+ */
+const sampleWaypoints = (coords, maxPoints = 5) => {
+  if (coords.length <= maxPoints) return coords;
+  
+  const sampled = [];
+  const step = (coords.length - 1) / (maxPoints - 1);
+  
+  for (let i = 0; i < maxPoints; i++) {
+    const index = Math.round(i * step);
+    sampled.push(coords[index]);
+  }
+  
+  return sampled;
+};
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- Configuration ---
 const TOTAL_ROUTES = 100;
@@ -52,20 +75,14 @@ const baseLocations = {
   ]
 };
 
-/**
- * Generates a coordinate offset to ensure meaningful distance (5km - 20km).
- * 0.1 degrees is roughly 11km.
- */
 const getMeaningfulOffset = () => {
-  const min = 0.06; // ~6.5km
-  const max = 0.18; // ~20km
+  const min = 0.06;
+  const max = 0.18;
   const offset = Math.random() * (max - min) + min;
   return Math.random() > 0.5 ? offset : -offset;
 };
 
 // --- API Helpers ---
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 const getMapboxDirections = async (start, end) => {
   const url = `https://api.mapbox.com/directions/v5/mapbox/cycling/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
   const response = await axios.get(url);
@@ -75,7 +92,6 @@ const getMapboxDirections = async (start, end) => {
 const getPlaceName = async (lng, lat) => {
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`;
   const response = await axios.get(url);
-  // Return a shortened name (e.g., "Hikkaduwa") or the first part of the full address
   const feature = response.data.features[0];
   return feature ? feature.text || feature.place_name.split(',')[0] : "Unknown Road";
 };
@@ -104,21 +120,13 @@ async function seed() {
       const user = await User.create({ ...u, password: hashedPassword });
       createdUsers.push(user);
     }
-    console.log(`Created ${createdUsers.length} users`);
 
     for (let i = 0; i < TOTAL_ROUTES; i++) {
       let startBase;
+      if (i < 15) startBase = baseLocations.ambalangoda;
+      else if (i < 30) startBase = baseLocations.malabe;
+      else startBase = baseLocations.others[i % baseLocations.others.length];
 
-      // Concentration Logic
-      if (i < 15) {
-        startBase = baseLocations.ambalangoda;
-      } else if (i < 30) {
-        startBase = baseLocations.malabe;
-      } else {
-        startBase = baseLocations.others[i % baseLocations.others.length];
-      }
-
-      // Generate meaningful distance start and end
       const start = { 
         lng: startBase.lng + (Math.random() - 0.5) * 0.02, 
         lat: startBase.lat + (Math.random() - 0.5) * 0.02 
@@ -130,30 +138,31 @@ async function seed() {
 
       try {
         const routeData = await getMapboxDirections(start, end);
-        
-        // Wait slightly between directions and geocoding to respect rate limits
         await sleep(DELAY_MS);
+        
         const startName = await getPlaceName(start.lng, start.lat);
         const endName = await getPlaceName(end.lng, end.lat);
+
+        // Extract full geometry
+        const fullCoordinates = routeData.geometry.coordinates;
 
         await Route.create({
           userId: createdUsers[i % createdUsers.length]._id,
           name: `${startName} to ${endName} Cycling`,
           startLocation: startName,
           endLocation: endName,
-          coordinates: routeData.geometry.coordinates, // Road-snapped path
-          distance: routeData.distance, // in meters
-          estimatedTime: routeData.duration, // in seconds
-          isPublic: i % 4 !== 0, // 75% public, 25% private
+          waypoints: sampleWaypoints(fullCoordinates, 5), // Added this line
+          coordinates: fullCoordinates,
+          distance: routeData.distance,
+          estimatedTime: routeData.duration,
+          isPublic: i % 4 !== 0,
           startPoint: {
             type: 'Point',
             coordinates: [start.lng, start.lat],
           },
         });
 
-        console.log(`[${i + 1}/${TOTAL_ROUTES}] Created: ${startName} -> ${endName} (${(routeData.distance/1000).toFixed(2)}km)`);
-        
-        // Final delay before next loop iteration
+        console.log(`[${i + 1}/${TOTAL_ROUTES}] Created: ${startName} -> ${endName} (Waypoints generated)`);
         await sleep(DELAY_MS);
       } catch (err) {
         console.error(`Error generating route ${i}:`, err.response?.data || err.message);

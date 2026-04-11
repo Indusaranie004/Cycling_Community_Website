@@ -162,7 +162,7 @@ export default function SidePanel({
             <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
               <PrimaryBrandButton
                 onClick={() => onToggleSave(selectedRoute._id)}
-                className='w-full py-3 !rounded-2xl'
+                className={`w-full py-3 !rounded-2xl ${!isOwner ? '!bg-[#FF7F11] hover:!bg-[#e67310]' : ''}`}
               >
                 {isSaved ? 'Unsave Route' : 'Save Route'}
               </PrimaryBrandButton>
