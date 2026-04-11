@@ -13,7 +13,7 @@ export default function Navbar() {
       className={`px-4 py-2 rounded text-sm font-medium transition-colors
         ${pathname === path
           ? 'bg-brand-sage text-brand-dark'
-          : 'text-brand-cream hover:text-brand-sage'}`}
+          : 'text-brand-cream hover:text-brand-orange'}`}
     >
       {label}
     </button>
@@ -32,7 +32,7 @@ export default function Navbar() {
         <button
           onClick={() => { logout(); navigate('/auth'); }}
           className='ml-4 px-4 py-2 rounded text-sm font-medium
-            bg-brand-red text-white hover:opacity-80 transition-opacity'
+            bg-brand-red text-white hover:bg-brand-orange hover:text-white transition-colors'
         >
           Logout
         </button>

@@ -23,7 +23,7 @@ export default function RouteDetailsPanel({
       <div className='flex items-center justify-between p-4
         bg-brand-dark text-brand-cream'>
         <h2 className='font-semibold text-base truncate flex-1'>{route.name}</h2>
-        <button onClick={onClose} className='ml-2 text-xl leading-none hover:opacity-70'>
+        <button onClick={onClose} className='ml-2 text-xl leading-none hover:text-brand-orange transition-colors'>
           ×
         </button>
       </div>
@@ -49,10 +49,10 @@ export default function RouteDetailsPanel({
         </div>
         {/* Badges */}
         <div className='flex gap-2'>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border
             ${route.isPublic
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700'}`}>
+              ? 'bg-emerald-50 text-emerald-600 border-emerald-300'
+              : 'bg-rose-50 text-rose-600 border-rose-300'}`}>
             {route.isPublic ? 'Public' : 'Private'}
           </span>
         </div>
@@ -62,7 +62,7 @@ export default function RouteDetailsPanel({
         <button
           onClick={() => onToggleSave(route._id)}
           className='w-full py-2 rounded-lg text-sm font-semibold transition-colors
-            bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
+            bg-brand-dark text-brand-cream hover:bg-brand-orange hover:text-brand-cream'
         >
           {isSaved ? 'Unsave Route' : 'Save Route'}
         </button>
@@ -70,7 +70,7 @@ export default function RouteDetailsPanel({
           <button
             onClick={handleDelete}
             className='w-full py-2 rounded-lg text-sm font-semibold transition-colors
-              bg-brand-red text-white hover:opacity-80'
+              bg-brand-red text-white hover:bg-brand-orange hover:text-white'
           >
             {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
           </button>
