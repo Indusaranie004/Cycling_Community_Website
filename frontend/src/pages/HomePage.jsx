@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 // Converts meters to km (e.g., 12180.694 -> 12.2 km)
 function formatDistance(metres) {
   if (!metres) return "0 km";
@@ -221,7 +223,7 @@ export default function HomePage() {
   useEffect(() => {
     
     // 1. Fetch Community Stats
-    fetch("http://localhost:3001/api/community-stats", {
+    fetch(`${BASE_URL}/api/community-stats`, {
   headers: {
     Authorization: `Bearer ${token}`,
   },
@@ -233,7 +235,7 @@ export default function HomePage() {
       .catch((err) => console.error("Stats fetch error:", err));
 
     // 2. Fetch Routes from DB
-    fetch("http://localhost:3001/api/routes/viewRoutes", {
+    fetch(`${BASE_URL}/api/routes/viewRoutes`, {
   headers: {
     Authorization: `Bearer ${token}`,
   },

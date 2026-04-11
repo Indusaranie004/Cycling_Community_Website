@@ -1,4 +1,5 @@
-const API_URL = '/api/notifications';
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_URL = `${BASE_URL}/api/notifications`;
 
 export const notificationService = {
     // Get notifications for a specific user

@@ -25,7 +25,7 @@ function NotificationHandler() {
           await requestForToken(async (fcmToken) => {
             // 2. Send the token to your backend API
             await axios.patch(
-              'http://localhost:3001/api/notifications/update-fcm', 
+              `${process.env.REACT_APP_API_BASE_URL}/api/notifications/update-fcm`, 
               { fcmToken },
               { headers: { Authorization: `Bearer ${token}` } }
             );
