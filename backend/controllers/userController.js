@@ -1,4 +1,7 @@
 const User = require('../models/User');
+const CommunityParticipant = require('../models/communityParticipant');
+const CommunityEvent = require('../models/communityEvent');
+const CommunityChallenge = require('../models/communityChallenge');
 const jwt = require('jsonwebtoken');
 
 // Helper: generate token
@@ -78,4 +81,82 @@ const getProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile };
+// ✅ NEW: GET COMMUNITY PROFILE with statistics
+const getUserCommunityProfile = async (req, res) => {
+  try {
+    const userId = req.userId; // From JWT middleware
+
+    // Find user
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get user's participations (using String userId)
+    const participations = await CommunityParticipant.find({ 
+      userId: userId,  // String comparison
+      status: { $in: ['joined', 'completed'] }
+    }).sort({ joinedAt: -1 });
+
+    // Calculate statistics
+    const eventsJoined = participations.filter(p => p.eventId).length;
+    const challengesJoined = participations.filter(p => p.challengeId).length;
+    const totalDistance = participations.reduce((sum, p) => sum + (p.progress || 0), 0);
+    const co2Saved = (totalDistance * 0.27).toFixed(1);
+
+    // Get events with names - MANUAL fetch (since eventId is String)
+    const recentEvents = [];
+    for (const p of participations.filter(p => p.eventId)) {
+      const event = await CommunityEvent.findOne({ eventId: p.eventId });
+      if (event) {
+        recentEvents.push({
+          eventId: event.eventId,
+          title: event.title,  // ✅ Event name
+          location: event.location,
+          eventDate: event.eventDate,
+          status: event.status,
+          joinedAt: p.joinedAt  // ✅ When user joined
+        });
+      }
+    }
+
+    // Get challenges with names - MANUAL fetch (since challengeId is String)
+    const recentChallenges = [];
+    for (const p of participations.filter(p => p.challengeId)) {
+      const challenge = await CommunityChallenge.findOne({ challengeId: p.challengeId });
+      if (challenge) {
+        recentChallenges.push({
+          challengeId: challenge.challengeId,
+          title: challenge.title,  // ✅ Challenge name
+          targetDistance: challenge.targetDistance,
+          progress: p.progress,  // ✅ User's progress
+          status: challenge.status,
+          joinedAt: p.joinedAt  // ✅ When user joined
+        });
+      }
+    }
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt
+      },
+      statistics: {
+        eventsJoined,
+        challengesJoined,
+        totalDistance: totalDistance.toFixed(1),
+        co2Saved
+      },
+      recentEvents,
+      recentChallenges
+    });
+  } catch (err) {
+    console.error('Get community profile error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { register, login, getProfile, getUserCommunityProfile };

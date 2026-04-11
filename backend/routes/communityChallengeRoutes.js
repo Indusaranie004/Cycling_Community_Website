@@ -9,7 +9,8 @@ const {
     getCommunityChallengeLeaderboard,
     getUserParticipationHistory,
     checkChallengeEnded,
-    getChallengeParticipants 
+    getChallengeParticipants,
+    getUserJoinedChallenges 
 } = require('../controllers/communityChallengeController');
 
 const { 
@@ -21,6 +22,7 @@ const {
 // /api/community/challenges
 router.get('/', getAllCommunityChallenges);
 router.post('/', requireAuth, requireAdmin, createCommunityChallenge);
+router.get('/my-challenges', requireAuth, getUserJoinedChallenges); 
 
 // /api/community/challenges/:id
 router.get('/:id', getCommunityChallengeById);

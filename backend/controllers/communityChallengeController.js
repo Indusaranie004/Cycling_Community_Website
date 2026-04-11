@@ -34,6 +34,7 @@ const createCommunityChallenge = async (req, res) => {
     try {
         const userId = req.userId; // From JWT
         const userRole = req.userRole; // From JWT
+
         if (userRole !== 'admin') {
             return res.status(403).json({ error: 'Only admins can create challenges' });
         }
@@ -65,9 +66,15 @@ const createCommunityChallenge = async (req, res) => {
 const joinCommunityChallenge = async (req, res) => {
     try {
         const userId = req.userId; // From JWT
+        const userRole = req.userRole;
 
         if (!userId) {
             return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        // Prevent admins from joining challenges
+        if (userRole === 'admin') {
+            return res.status(403).json({ error: 'Admins cannot join challenges. Only regular users can participate.' });
         }
 
         const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
@@ -108,7 +115,13 @@ const joinCommunityChallenge = async (req, res) => {
 const updateCommunityChallengeProgress = async (req, res) => {
     try {
         const userId = req.userId; // From JWT
+        const userRole = req.userRole;
         const { distance } = req.body;
+
+        // Prevent admins from updating progress
+        if (userRole === 'admin') {
+            return res.status(403).json({ error: 'Admins cannot update progress. Only regular users can log rides.' });
+        }
 
         if (!userId || distance === undefined) {
             return res.status(400).json({ error: 'userId and distance are required' });
@@ -176,26 +189,36 @@ const getChallengeParticipants = async (req, res) => {
     }
 };
 
-// GET leaderboard for community challenge
+//  GET leaderboard with user details
 const getCommunityChallengeLeaderboard = async (req, res) => {
     try {
         const communityChallenge = await CommunityChallenge.findOne({ challengeId: req.params.id });
-
         if (!communityChallenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
 
-        // Get participants from participant table
         const participants = await CommunityParticipant.find({
             challengeId: communityChallenge.challengeId,
             status: 'joined'
         }).sort({ progress: -1 });
 
-        const leaderboard = participants.map((p, index) => ({
-            rank: index + 1,
-            userId: p.userId,
-            progress: p.progress,
-            joinedAt: p.joinedAt
+        // Fetch user details for each participant
+        const User = require('../models/User');
+        const leaderboard = await Promise.all(participants.map(async (p, index) => {
+            let user = null;
+            try {
+                user = await User.findById(p.userId);
+            } catch (err) {
+                // User might not exist
+            }
+
+            return {
+                rank: index + 1,
+                userId: p.userId,
+                userName: user ? user.name : `User ${p.userId.toString().slice(0, 6)}`,
+                progress: p.progress,
+                joinedAt: p.joinedAt
+            };
         }));
 
         res.status(200).json(leaderboard);
@@ -260,6 +283,42 @@ const checkChallengeEnded = async (req, res) => {
     }
 };
 
+// GET user's joined challenges
+const getUserJoinedChallenges = async (req, res) => {
+  try {
+    const userId = req.userId; // From JWT middleware
+
+    // Get all participations for this user
+    const participations = await CommunityParticipant.find({
+      userId,
+      challengeId: { $ne: null },
+      status: { $in: ['joined', 'completed'] }
+    }).populate('challengeId');
+
+   // Manually fetch challenge details (since challengeId is String)
+    const joinedChallenges = [];
+    for (const p of participations) {
+      const challenge = await CommunityChallenge.findOne({ challengeId: p.challengeId });
+      if (challenge) {
+        joinedChallenges.push({
+          challengeId: challenge.challengeId,
+          title: challenge.title,
+          description: challenge.description,
+          targetDistance: challenge.targetDistance,  // ✅ This is missing!
+          userProgress: p.progress,
+          status: challenge.status,
+          endDate: challenge.endDate,  // ✅ This is missing!
+          joinedAt: p.joinedAt
+        });
+      }
+    }
+
+    res.status(200).json(joinedChallenges);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
     getAllCommunityChallenges,
     getCommunityChallengeById,
@@ -269,5 +328,6 @@ module.exports = {
     getCommunityChallengeLeaderboard,
     getUserParticipationHistory,
     checkChallengeEnded,
-    getChallengeParticipants
+    getChallengeParticipants,
+    getUserJoinedChallenges
 };

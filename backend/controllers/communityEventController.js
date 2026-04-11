@@ -6,7 +6,7 @@ const getAllCommunityEvents = async (req, res) => {
     try {
         const { status } = req.query;
         const filter = status ? { status } : {};
-        
+
         const communityEvents = await CommunityEvent.find(filter).sort({ eventDate: 1 });
         res.status(200).json(communityEvents);
     } catch (err) {
@@ -18,11 +18,11 @@ const getAllCommunityEvents = async (req, res) => {
 const getCommunityEventById = async (req, res) => {
     try {
         const communityEvent = await CommunityEvent.findOne({ eventId: req.params.id });
-        
+
         if (!communityEvent) {
             return res.status(404).json({ error: 'Community event not found' });
         }
-        
+
         res.status(200).json(communityEvent);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -63,13 +63,18 @@ const createCommunityEvent = async (req, res) => {
 const joinCommunityEvent = async (req, res) => {
     try {
         const userId = req.userId; // From JWT
+        const userRole = req.userRole;
         
         if (!userId) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
+        if (userRole === 'admin') {
+            return res.status(403).json({ error: 'Admins cannot join events. Only regular users can join.' });
+        }
+
         const communityEvent = await CommunityEvent.findOne({ eventId: req.params.id });
-        
+
         if (!communityEvent) {
             return res.status(404).json({ error: 'Event not found' });
         }
@@ -101,9 +106,9 @@ const joinCommunityEvent = async (req, res) => {
         communityEvent.currentParticipants += 1;
         await communityEvent.save();
 
-        res.status(200).json({ 
-            message: 'Successfully joined event', 
-            communityEvent 
+        res.status(200).json({
+            message: 'Successfully joined event',
+            communityEvent
         });
     } catch (err) {
         console.error('Join event error:', err);
@@ -115,7 +120,7 @@ const joinCommunityEvent = async (req, res) => {
 const getEventParticipants = async (req, res) => {
     try {
         const communityEvent = await CommunityEvent.findOne({ eventId: req.params.id });
-        
+
         if (!communityEvent) {
             return res.status(404).json({ error: 'Event not found' });
         }
@@ -173,20 +178,20 @@ const updateCommunityEvent = async (req, res) => {
         const { title, description, location, eventDate, eventTime, maxParticipants, status } = req.body;
 
         const updatedData = {};
-        if(title!== undefined) updatedData.title = title;
-        if(description !== undefined) updatedData.description = description;
-        if(location !== undefined) updatedData.location = location;
-        if(eventDate !== undefined) updatedData.eventDate = eventDate;
-        if(eventTime !== undefined) updatedData.eventTime = eventTime;
-        if(maxParticipants !== undefined) updatedData.maxParticipants = maxParticipants;
-        if(status !== undefined) updatedData.status = status;
+        if (title !== undefined) updatedData.title = title;
+        if (description !== undefined) updatedData.description = description;
+        if (location !== undefined) updatedData.location = location;
+        if (eventDate !== undefined) updatedData.eventDate = eventDate;
+        if (eventTime !== undefined) updatedData.eventTime = eventTime;
+        if (maxParticipants !== undefined) updatedData.maxParticipants = maxParticipants;
+        if (status !== undefined) updatedData.status = status;
 
         const updatedEvent = await CommunityEvent.findOneAndUpdate(
             { eventId: existingEvent.eventId },
             { $set: updatedData },
             { new: true, runValidators: true }
         );
-        
+
         res.status(200).json(updatedEvent);
     } catch (err) {
         if (err.name === 'ValidationError') {
