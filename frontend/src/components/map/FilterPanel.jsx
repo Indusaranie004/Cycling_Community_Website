@@ -5,7 +5,7 @@ const FILTERS = [
   { key: 'saved',    label: 'Saved'     },
 ];
 
-export default function FilterPanel({ activeFilter, onChange, variant = 'dropdown' }) {
+export default function FilterPanel({ activeFilter, onChange, variant = 'dropdown', counts = {} }) {
   const [open, setOpen] = useState(false);
 
   const handleToggle = (key) => {
@@ -25,22 +25,40 @@ export default function FilterPanel({ activeFilter, onChange, variant = 'dropdow
     ];
 
     return (
-      <div className='flex flex-wrap gap-2'>
-        {chips.map(chip => {
-          const active = activeFilter === chip.key;
-          return (
+      <div className='space-y-3'>
+        <div className='flex flex-wrap gap-2'>
+          {chips.map(chip => {
+            const active = activeFilter === chip.key;
+            const count = counts[chip.key] ?? 0;
+            return (
+              <button
+                key={chip.key}
+                onClick={() => onChange(chip.key)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold border transition-colors
+                  ${active
+                    ? 'bg-brand-dark text-brand-cream border-brand-dark'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-brand-orange hover:text-brand-orange'}`}
+              >
+                <span>{chip.label}</span>
+                <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[10px] font-bold
+                  ${active ? 'bg-white/20 text-brand-cream' : 'bg-brand-dark/10 text-brand-dark'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {isFiltered && (
+          <div className='flex justify-end pr-2'>
             <button
-              key={chip.key}
-              onClick={() => onChange(chip.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors
-                ${active
-                  ? 'bg-brand-dark text-brand-cream border-brand-dark'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-dark hover:text-brand-dark'}`}
+              type='button'
+              onClick={handleClear}
+              className='text-sm font-medium text-blue-600 hover:text-brand-orange transition-colors'
             >
-              {chip.label}
+              Clear all
             </button>
-          );
-        })}
+          </div>
+        )}
       </div>
     );
   }
@@ -54,8 +72,8 @@ export default function FilterPanel({ activeFilter, onChange, variant = 'dropdow
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
             shadow-lg transition-colors
             ${open || isFiltered
-              ? 'bg-brand-cream text-brand-dark'
-              : 'bg-brand-dark/80 backdrop-blur-sm text-brand-cream hover:bg-brand-dark'}`}
+              ? 'bg-brand-cream text-brand-dark hover:bg-brand-orange/20 hover:text-brand-orange'
+              : 'bg-brand-dark/80 backdrop-blur-sm text-brand-cream hover:bg-brand-orange hover:text-brand-cream'}`}
         >
           {/* Sliders icon */}
           <svg width='16' height='16' viewBox='0 0 16 16' fill='none'
@@ -82,7 +100,7 @@ export default function FilterPanel({ activeFilter, onChange, variant = 'dropdow
               <p className='font-bold text-brand-dark text-sm'>Filter Routes</p>
               <button
                 onClick={() => setOpen(false)}
-                className='text-gray-400 hover:text-brand-dark transition-colors text-lg leading-none'
+                className='text-gray-400 hover:text-brand-orange transition-colors text-lg leading-none'
               >
                 ×
               </button>
@@ -103,13 +121,13 @@ export default function FilterPanel({ activeFilter, onChange, variant = 'dropdow
                       justify-center flex-shrink-0 transition-colors
                       ${isActive
                         ? 'border-brand-dark bg-brand-dark'
-                        : 'border-gray-300 group-hover:border-brand-dark'}`}>
+                        : 'border-gray-300 group-hover:border-brand-orange'}`}>
                       {isActive && (
                         <span className='w-2 h-2 rounded-full bg-white' />
                       )}
                     </span>
                     <span className={`text-sm font-medium transition-colors
-                      ${isActive ? 'text-brand-dark' : 'text-gray-500 group-hover:text-brand-dark'}`}>
+                      ${isActive ? 'text-brand-dark' : 'text-gray-500 group-hover:text-brand-orange'}`}>
                       {f.label}
                     </span>
                   </button>
@@ -123,7 +141,7 @@ export default function FilterPanel({ activeFilter, onChange, variant = 'dropdow
                 onClick={() => { handleClear(); setOpen(false); }}
                 className='mt-4 w-full py-2 rounded-xl text-xs font-semibold
                   border border-gray-200 text-gray-500
-                  hover:border-brand-red hover:text-brand-red transition-colors'
+                  hover:border-brand-orange hover:text-brand-orange transition-colors'
               >
                 Clear Filter
               </button>

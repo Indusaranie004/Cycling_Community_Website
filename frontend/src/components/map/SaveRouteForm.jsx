@@ -1,22 +1,84 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import RoutePathCard from './RoutePathCard';
+import RouteMetricsPill from './RouteMetricsPill';
+import SegmentedVisibilityToggle from './SegmentedVisibilityToggle';
 
-const MAX_NAME = 100;
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
-export default function SaveRouteForm({ waypoints, onSave, onCancel }) {
-  const [name, setName] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
+async function reverseGeocode(lng, lat, signal) {
+  if (!MAPBOX_TOKEN || lng == null || lat == null) return '';
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(lng)},${encodeURIComponent(lat)}.json?access_token=${encodeURIComponent(MAPBOX_TOKEN)}&limit=1`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) return '';
+  const data = await res.json();
+  return (data.features?.[0]?.place_name || '').trim();
+}
+
+/** Create/update save flow in Route Explorer: same layout for new routes and updates. */
+export default function SaveRouteForm({
+  waypoints,
+  liveStats,
+  onSave,
+  onCancel,
+  isUpdate = false,
+  initialName = '',
+  initialIsPublic = true,
+  labelClassName = '',
+}) {
+  const [name, setName] = useState(initialName);
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [nameError, setNameError] = useState('');
   const [apiError, setApiError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [startLocationName, setStartLocationName] = useState('');
+  const [endLocationName, setEndLocationName] = useState('');
 
-  // Frontend validation
+  useEffect(() => {
+    if (waypoints.length < 2) {
+      setStartLocationName('');
+      setEndLocationName('');
+      return;
+    }
+
+    const start = waypoints[0];
+    const end = waypoints[waypoints.length - 1];
+    if (!start || !end || start.length < 2 || end.length < 2) return;
+
+    const ac = new AbortController();
+    const t = setTimeout(async () => {
+      setStartLocationName('');
+      setEndLocationName('');
+      try {
+        const [startLng, startLat] = [Number(start[0]), Number(start[1])];
+        const [endLng, endLat] = [Number(end[0]), Number(end[1])];
+        if (Number.isNaN(startLng) || Number.isNaN(startLat) || Number.isNaN(endLng) || Number.isNaN(endLat)) {
+          return;
+        }
+        const [sName, eName] = await Promise.all([
+          reverseGeocode(startLng, startLat, ac.signal),
+          reverseGeocode(endLng, endLat, ac.signal),
+        ]);
+        if (!ac.signal.aborted) {
+          setStartLocationName(sName);
+          setEndLocationName(eName);
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError' && !ac.signal.aborted) {
+          setStartLocationName('');
+          setEndLocationName('');
+        }
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(t);
+      ac.abort();
+    };
+  }, [waypoints]);
+
   const validateName = (val) => {
     if (!val.trim()) {
       setNameError('Route name is required.');
-      return false;
-    }
-    if (val.length > MAX_NAME) {
-      setNameError(`Name cannot exceed ${MAX_NAME} characters.`);
       return false;
     }
     setNameError('');
@@ -31,7 +93,6 @@ export default function SaveRouteForm({ waypoints, onSave, onCancel }) {
     try {
       await onSave(name.trim(), isPublic);
     } catch (err) {
-      // Inline API error (e.g. 409 duplicate name)
       setApiError(err.message);
     } finally {
       setSaving(false);
@@ -40,68 +101,77 @@ export default function SaveRouteForm({ waypoints, onSave, onCancel }) {
 
   const isDisabled = saving || !!nameError || !name.trim() || waypoints.length < 2;
 
+  const startLabel = startLocationName || 'Start point';
+  const endLabel = endLocationName || 'End point';
+
+  const nameInputId = isUpdate ? 'edit-route-name' : 'new-route-name';
+  const visibilityIdPrefix = isUpdate ? 'edit-route' : 'save-route';
+
   return (
-    <div className='absolute bottom-0 left-0 right-0 z-10
-      bg-brand-dark/95 backdrop-blur-sm
-      p-4 flex flex-col gap-3'>
-      <h3 className='text-brand-cream font-semibold text-sm'>Save New Route</h3>
-      {/* Route name input */}
+    <div className='flex flex-col gap-4 pb-0'>
+      <h3 className='text-brand-dark font-semibold text-sm'>
+        {isUpdate ? 'Update Route' : 'Save New Route'}
+      </h3>
+
       <div>
-        <div className='flex justify-between items-center mb-1'>
-          <label className='text-brand-sage text-xs'>Route name *</label>
-          <span className={`text-xs ${name.length > MAX_NAME
-            ? 'text-brand-red' : 'text-gray-400'}`}>
-            {name.length}/{MAX_NAME}
-          </span>
-        </div>
+        <label className='mb-1 block text-xs font-medium text-gray-600' htmlFor={nameInputId}>
+          Route name *
+        </label>
         <input
+          id={nameInputId}
           type='text'
           value={name}
-          maxLength={MAX_NAME + 10}
           placeholder='e.g. Morning Commute'
           onBlur={() => validateName(name)}
-          onChange={e => { setName(e.target.value); validateName(e.target.value); }}
-          className={`w-full rounded px-3 py-2 text-sm bg-white/10 text-brand-cream
-            border focus:outline-none
-            ${nameError ? 'border-brand-red' : 'border-white/20 focus:border-brand-sage'}`}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (nameError) validateName(e.target.value);
+          }}
+          className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-brand-dark
+            focus:outline-none focus:ring-2 focus:ring-brand-orange/30
+            ${nameError ? 'border-brand-red' : 'border-gray-200 focus:border-brand-orange'}`}
         />
         {nameError && (
-          <p className='text-brand-red text-xs mt-1'>{nameError}</p>
+          <p className='mt-1 text-xs text-brand-red'>{nameError}</p>
         )}
         {apiError && (
-          <p className='text-brand-red text-xs mt-1'>{apiError}</p>
+          <p className='mt-1 text-xs text-brand-red'>{apiError}</p>
         )}
       </div>
-      {/* Visibility toggle */}
-      <div className='flex items-center gap-3'>
-        {['Public', 'Private'].map(opt => (
-          <button
-            key={opt}
-            onClick={() => setIsPublic(opt === 'Public')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors
-              ${(opt === 'Public') === isPublic
-                ? 'bg-brand-sage text-brand-dark'
-                : 'bg-white/10 text-brand-cream'}`}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
-      {/* Actions */}
-      <div className='flex gap-3'>
+
+      <SegmentedVisibilityToggle
+        isPublic={isPublic}
+        onChange={setIsPublic}
+        idPrefix={visibilityIdPrefix}
+        className='ms-auto w-[min(100%,10.5rem)]'
+        labelClassName={labelClassName}
+      />
+
+      <RoutePathCard startLabel={startLabel} endLabel={endLabel} />
+
+      {liveStats && (
+        <RouteMetricsPill
+          distanceMeters={liveStats.distance}
+          estimatedTimeMinutes={liveStats.estimatedTime}
+        />
+      )}
+
+      <div className='flex flex-col gap-2 sm:flex-row sm:gap-3'>
         <button
+          type='button'
           onClick={handleSubmit}
           disabled={isDisabled}
-          className='flex-1 py-2 rounded-lg text-sm font-semibold transition-opacity
+          className='flex-1 rounded-xl py-2.5 text-sm font-semibold transition-opacity
             bg-brand-orange text-white
-            disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90'
+            disabled:cursor-not-allowed disabled:opacity-40 hover:brightness-110'
         >
           {saving ? 'Saving...' : 'Save Route'}
         </button>
         <button
+          type='button'
           onClick={onCancel}
-          className='px-5 py-2 rounded-lg text-sm font-semibold
-            bg-white/10 text-brand-cream hover:bg-white/20 transition-colors'
+          className='rounded-xl border-2 border-gray-200 px-5 py-2.5 text-sm font-semibold
+            text-brand-dark transition-colors hover:border-brand-orange hover:text-brand-orange'
         >
           Cancel
         </button>
