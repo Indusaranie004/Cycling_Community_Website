@@ -160,11 +160,35 @@ const deleteInteraction = async (req, res) => {
     }
 };
 
+// get all active hazards for map display (public)
+const getActiveHazards = async (req, res) => {
+  try {
+    const now = new Date();
+    const hazards = await Interaction.find({
+      intType: 'hazard',
+      isActive: true,
+      intLatitude: { $exists: true },
+      intLongitude: { $exists: true },
+      $or: [
+        { expiryTime: { $gt: now } },
+        { expiryTime: null },
+      ],
+    })
+      .populate('userId', 'name')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(hazards);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
     getAllInteractions,
     getInteractionById,
     createInteraction,
     updateInteraction,
     deactivateInteraction,
-    deleteInteraction
+    deleteInteraction,
+    getActiveHazards
 };

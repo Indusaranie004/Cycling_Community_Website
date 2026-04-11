@@ -7,7 +7,8 @@ const {
     createInteraction,
     updateInteraction,
     deactivateInteraction,
-    deleteInteraction
+    deleteInteraction,
+    getActiveHazards
 } = require('../controllers/interactionController');
 const { requireAuth } = require('../middleware/auth/authRoute');
 const { checkInteractionOwnership } = require('../middleware/auth/authInteraction');
@@ -22,6 +23,9 @@ const {
 
 // GET all
 router.get('/', requireAuth, validateInteractionQuery, getAllInteractions);
+
+router.get('/active-hazards', requireAuth, getActiveHazards);
+
 
 // GET single
 router.get('/:id', requireAuth, validateInteractionId, getInteractionById);

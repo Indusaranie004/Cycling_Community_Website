@@ -80,3 +80,14 @@ export const deleteInteraction = async (id, token) => {
   if (!res.ok) throw new Error("Failed to delete interaction");
   return res.json();
 };
+
+export const getActiveHazards = async (token) => {
+  const res = await fetch(`${BASE_URL}/api/interactions/active-hazards`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error('Failed to fetch hazards');
+  return res.json();
+};

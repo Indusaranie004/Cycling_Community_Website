@@ -3,6 +3,8 @@ import Map from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import RouteLayer from './RouteLayer';
 import WaypointLayer from './WaypointLayer';
+import { Marker } from 'react-map-gl';
+
 
 const TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
@@ -19,11 +21,13 @@ const ZOOM_THRESHOLD = 11;
 export default function MapContainer({
   mode, routes, waypoints, selectedRoute,
   mapCenter, focusCoordinates, activeFilter, zoom, onZoomChange,
-  onMapClick, onRouteClick, onWaypointRemove,
+  onMapClick, onRouteClick, onWaypointRemove, hazards = [],
 }) {
   const mapRef = useRef();
   const [hoveredRoute, setHoveredRoute] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [hoveredHazard, setHoveredHazard] = useState(null);
+const [hazardTooltipPos, setHazardTooltipPos] = useState({ x: 0, y: 0 });
 
   // Fly to mapCenter when it changes (e.g. after nearby search)
   useEffect(() => {
@@ -124,6 +128,42 @@ export default function MapContainer({
             onRemove={onWaypointRemove}
           />
         )}
+
+        {hazards.map(hazard => {
+  if (!hazard.intLatitude || !hazard.intLongitude) return null;
+  const colour = hazard.severityLevel === 'high'
+    ? '#E42926'
+    : hazard.severityLevel === 'medium'
+    ? '#FF7F11'
+    : '#F5C518';
+
+  return (
+    <Marker
+      key={hazard._id}
+      longitude={hazard.intLongitude}
+      latitude={hazard.intLatitude}
+    >
+      <div
+        className='flex items-center justify-center w-8 h-8 rounded-full
+          shadow-lg cursor-pointer border-2 border-white text-base
+          transition-transform hover:scale-110'
+        style={{ backgroundColor: colour }}
+        onMouseEnter={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const mapRect = e.currentTarget.closest('.relative').getBoundingClientRect();
+          setHoveredHazard(hazard);
+          setHazardTooltipPos({
+            x: rect.left - mapRect.left + rect.width / 2,
+            y: rect.top - mapRect.top,
+          });
+        }}
+        onMouseLeave={() => setHoveredHazard(null)}
+      >
+        ⚠️
+      </div>
+    </Marker>
+  );
+})}
       </Map>
 
       {/* Hover tooltip — rendered outside the Map so it sits on top cleanly */}
@@ -145,6 +185,26 @@ export default function MapContainer({
           </p>
         </div>
       )}
+
+      {hoveredHazard && (
+  <div
+    className='absolute z-30 pointer-events-none
+      bg-brand-dark/95 text-brand-cream rounded-xl
+      px-3 py-2 shadow-xl text-xs max-w-xs'
+    style={{
+      left: hazardTooltipPos.x + 14,
+      top: hazardTooltipPos.y - 80,
+    }}
+  >
+    <p className='font-semibold capitalize'>
+      {hoveredHazard.severityLevel} Severity
+    </p>
+    <p className='text-gray-300 mt-0.5'>{hoveredHazard.intDescription}</p>
+    <p className='text-gray-500 mt-1 text-[10px]'>
+      Reported by {hoveredHazard.userId?.name || 'Unknown'}
+    </p>
+  </div>
+)}
     </div>
   );
 }

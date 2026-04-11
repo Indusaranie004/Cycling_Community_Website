@@ -198,7 +198,7 @@ const handleSubmit = async () => {
         )}
 
         {/* Image Upload */}
-        <label className={labelClasses}>Upload Proof (Photo)</label>
+        {/* <label className={labelClasses}>Upload Proof (Photo)</label>
         <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4 text-sm text-brand-dark file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-orange file:text-white hover:file:bg-brand-orange/80 cursor-pointer" />
 
         {imagePreview && (
@@ -206,7 +206,7 @@ const handleSubmit = async () => {
             <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover rounded-lg border border-brand-sage" />
             <button onClick={() => {setFile(null); setImagePreview(null);}} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">✕</button>
           </div>
-        )}
+        )} */}
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 mt-4">

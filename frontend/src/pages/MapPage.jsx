@@ -8,7 +8,7 @@ import SidePanel from '../components/map/SidePanel';
 import CreateModeStats from '../components/map/CreateModeStats';
 import SaveRouteForm from '../components/map/SaveRouteForm';
 import CreateInteraction from '../components/interactions/CreateInteraction';
-import {createInteraction} from '../services/interactionService';
+import { createInteraction, getActiveHazards } from '../services/interactionService';
 
 const EARTH_RADIUS_KM = 6371;
 const CYCLING_SPEED_KMH = 18;
@@ -144,6 +144,8 @@ const [showCreateInteraction, setShowCreateInteraction] = useState(false);
 const [pickedLocation, setPickedLocation] = useState(null);
 const [pickingLocation, setPickingLocation] = useState(false);
 const [interactionInitialType, setInteractionInitialType] = useState('hazard');
+const [showHazards, setShowHazards] = useState(false);
+const [hazards, setHazards] = useState([]);
 
   // Load saved route IDs on mount
   useEffect(() => {
@@ -164,6 +166,11 @@ const [interactionInitialType, setInteractionInitialType] = useState('hazard');
     }
     setLiveStats(calculateRouteStats(waypoints));
   }, [mode, waypoints]);
+
+  useEffect(() => {
+  if (showHazards) fetchHazards();
+  else setHazards([]);
+}, [showHazards]); // eslint-disable-line
 
   async function fetchByFilter(filter) {
     try {
@@ -272,6 +279,15 @@ const [interactionInitialType, setInteractionInitialType] = useState('hazard');
     setUpdatingRoute(null);
     setMode('display');
   }
+
+  async function fetchHazards() {
+  try {
+    const data = await getActiveHazards(token);
+    setHazards(data);
+  } catch (err) {
+    console.error('Failed to fetch hazards', err);
+  }
+}
 
   const handleToggleMode = useCallback(() => {
     if (mode === 'display') {
@@ -449,6 +465,7 @@ const [interactionInitialType, setInteractionInitialType] = useState('hazard');
         <MapContainer
           mode={mode}
           routes={routes}
+          hazards={showHazards ? hazards : []}
           waypoints={waypoints}
           selectedRoute={selectedRoute}
           mapCenter={mapCenter}
@@ -527,6 +544,18 @@ const [interactionInitialType, setInteractionInitialType] = useState('hazard');
                   variant='inline'
                 />
               )}
+
+              {mode === 'display' && (
+  <button
+    onClick={() => setShowHazards(prev => !prev)}
+    className={`w-full px-4 py-2 rounded-xl font-semibold text-sm shadow-sm transition-colors
+      ${showHazards
+        ? 'bg-brand-orange text-white'
+        : 'bg-white border border-gray-200 text-brand-dark hover:bg-brand-orange/10'}`}
+  >
+    {showHazards ? '⚠️ Hazards ON' : '⚠️ Hazards OFF'}
+  </button>
+)}
             </div>
 
             {sidePanelOpen && (
