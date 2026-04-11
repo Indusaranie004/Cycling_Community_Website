@@ -143,6 +143,7 @@ export default function MapPage() {
 const [showCreateInteraction, setShowCreateInteraction] = useState(false);
 const [pickedLocation, setPickedLocation] = useState(null);
 const [pickingLocation, setPickingLocation] = useState(false);
+const [interactionInitialType, setInteractionInitialType] = useState('hazard');
 
   // Load saved route IDs on mount
   useEffect(() => {
@@ -382,6 +383,12 @@ const [pickingLocation, setPickingLocation] = useState(false);
     setEditDraft({ name: '', startLocation: '', endLocation: '', isPublic: true });
   }
 
+  function handleAddFeedback(route) {
+  setSelectedRoute(route);
+  setInteractionInitialType('feedback');
+  setShowCreateInteraction(true);
+}
+
   async function handleToggleSave(routeId) {
     try {
       if (savedRouteIds.has(routeId)) {
@@ -493,7 +500,10 @@ const [pickingLocation, setPickingLocation] = useState(false);
       {searchLoading ? 'Locating...' : 'Search Area'}
     </button>
     <button
-      onClick={() => setShowCreateInteraction(true)}
+      onClick={() => {
+  setInteractionInitialType('hazard');
+  setShowCreateInteraction(true);
+}}
       className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
         bg-brand-orange text-white hover:opacity-90 transition-colors'
     >
@@ -542,7 +552,8 @@ const [pickingLocation, setPickingLocation] = useState(false);
                   onSaveEdit={handleSaveUpdatedRoute}
                   onCancelEdit={handleCancelUpdateInPanel}
                   onClose={handleClosePanel}
-                  embedded={true}
+onAddFeedback={handleAddFeedback}
+embedded={true}
                 />
               </div>
             )}
@@ -581,18 +592,20 @@ const [pickingLocation, setPickingLocation] = useState(false);
 {/* Create Interaction Modal */}
 {showCreateInteraction && (
   <CreateInteraction
-    onClose={() => {
-      setShowCreateInteraction(false);
-      setPickedLocation(null);
-      setPickingLocation(false);
-    }}
-    onSubmit={handleCreateInteractionSubmit}
-    onPickLocation={() => {
-      setShowCreateInteraction(false);
-      setPickingLocation(true);
-    }}
-    pickedLocation={pickedLocation}
-  />
+  onClose={() => {
+    setShowCreateInteraction(false);
+    setPickedLocation(null);
+    setPickingLocation(false);
+  }}
+  onSubmit={handleCreateInteractionSubmit}
+  onPickLocation={() => {
+    setShowCreateInteraction(false);
+    setPickingLocation(true);
+  }}
+  pickedLocation={pickedLocation}
+  selectedRoute={selectedRoute}
+  initialType={interactionInitialType}
+/>
 )}
       </div>
     </div>

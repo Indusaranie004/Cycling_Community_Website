@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from "react";
 
-export default function CreateInteraction({ onClose, onSubmit, onPickLocation, pickedLocation }) {
+export default function CreateInteraction({ onClose, onSubmit, onPickLocation, pickedLocation, selectedRoute, initialType   }) {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [form, setForm] = useState({
-    intType: "hazard",
-    intDescription: "",
-    intRating: 5,
-    severityLevel: "low",
-    intLatitude: "",
-    intLongitude: "",
-    routeId: "", // Added from Schema
-    expiryTime: "3600000", // Added from Schema
-    fcmToken: "", // Added from Schema
-  });
+  intType: initialType || "hazard",
+  intDescription: "",
+  intRating: 5,
+  severityLevel: "low",
+  intLatitude: "",
+  intLongitude: "",
+  expiryTime: "3600000",
+  fcmToken: "",
+});
   const [file, setFile] = useState(null);
 
   // Auto-generate or "capture" an FCM token when the component mounts
@@ -52,6 +51,7 @@ export default function CreateInteraction({ onClose, onSubmit, onPickLocation, p
 
 const handleSubmit = async () => {
   if (!form.intDescription) return alert("Please add a description");
+  if (form.intType === "feedback" && !selectedRoute) return alert("Please select a route on the map before submitting feedback.");
 
   setLoading(true);
   try {
@@ -64,7 +64,7 @@ const handleSubmit = async () => {
     const savedToken = localStorage.getItem('fcmToken');
     data.append("fcmToken", savedToken || "");
 
-    if (form.routeId) data.append("routeId", form.routeId);
+    if (selectedRoute?._id) data.append("routeId", selectedRoute._id);
 
     if (form.intType === "feedback") {
       data.append("intRating", form.intRating);
@@ -115,9 +115,26 @@ const handleSubmit = async () => {
         </select>
 
         {/* Route ID (Optional Association) */}
-        <label className={labelClasses}>Associated Route ID (Optional)</label>
-        <input name="routeId" placeholder="Paste Route ID if applicable" value={form.routeId} onChange={handleChange} className={inputClasses} />
-
+        {/* Route Association — only shown for feedback */}
+{form.intType === "feedback" && (
+  <div className="mb-4">
+    <label className={labelClasses}>Associated Route</label>
+    {selectedRoute ? (
+      <div className="w-full border border-brand-sage rounded-lg p-2.5
+        bg-brand-sage/10 text-brand-dark text-sm">
+        <p className="font-semibold truncate">{selectedRoute.name}</p>
+        <p className="text-xs text-gray-500 mt-0.5 truncate">
+          {selectedRoute.startLocation || 'Start'} → {selectedRoute.endLocation || 'End'}
+        </p>
+      </div>
+    ) : (
+      <div className="w-full border border-dashed border-gray-300 rounded-lg p-2.5
+        bg-gray-50 text-gray-400 text-sm text-center">
+        Select a route on the map first
+      </div>
+    )}
+  </div>
+)}
         {/* Description */}
         <label className={labelClasses}>Description</label>
         <textarea name="intDescription" placeholder="Tell us what's happening..." value={form.intDescription} onChange={handleChange} rows="2" className={inputClasses} />
@@ -196,7 +213,7 @@ const handleSubmit = async () => {
           <button onClick={onClose} className="px-5 py-2.5 font-semibold text-brand-dark hover:bg-brand-sage/20 rounded-xl transition-colors">Cancel</button>
           <button 
             onClick={handleSubmit} 
-            disabled={loading}
+            disabled={loading || (form.intType === "feedback" && !selectedRoute)}
             className={`px-6 py-2.5 bg-brand-orange text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-brand-orange/90'}`}
           >
             {loading ? "Submitting..." : "Submit Report"}

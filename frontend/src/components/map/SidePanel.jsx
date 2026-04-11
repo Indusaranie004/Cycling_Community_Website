@@ -74,6 +74,7 @@ export default function SidePanel({
   onSaveEdit,
   onCancelEdit,
   onClose,
+  onAddFeedback,
   embedded = false,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -262,12 +263,18 @@ export default function SidePanel({
             ) : (
               <>
                 <PanelButton
-                  onClick={() => onToggleSave(selectedRoute._id)}
-                  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
-                >
-                  {isSaved ? 'Unsave Route' : 'Save Route'}
-                </PanelButton>
-                {isOwner && (
+  onClick={() => onToggleSave(selectedRoute._id)}
+  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
+>
+  {isSaved ? 'Unsave Route' : 'Save Route'}
+</PanelButton>
+<PanelButton
+  onClick={() => onAddFeedback(selectedRoute)}
+  className='border-2 border-brand-sage text-brand-dark hover:bg-brand-sage/20'
+>
+  💬 Add Feedback
+</PanelButton>
+{isOwner && (
                   <>
                     <PanelButton
                       onClick={() => onUpdate(selectedRoute)}
