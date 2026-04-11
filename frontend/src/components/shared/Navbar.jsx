@@ -55,6 +55,14 @@ function IconLogOut({ className = 'w-5 h-5' }) {
   );
 }
 
+function IconRide({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11.5 8h4M7.5 13H5m3.5-5H7A2.5 2.5 0 004.5 10.5v1.25m6-1.25V9m3.5 4h1.5a2.5 2.5 0 012.5 2.5v1.25M17 19a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7 19a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' />
+    </svg>
+  );
+}
+
 /** Must match MapPage `marginLeft` / `width` via `--map-sidebar-width` (use px, not rem). */
 const MAP_SIDEBAR_EXPANDED_PX = 260;
 const MAP_SIDEBAR_COLLAPSED_PX = 72;
@@ -63,6 +71,7 @@ const NAV_ITEMS = [
   { label: 'Home', path: '/home', Icon: IconHome },
   { label: 'Map', path: '/map', Icon: IconMap },
   { label: 'Interactions', path: '/interactions', Icon: IconInteractions },
+  { label: 'Ride', path: '/ride', Icon: IconRide },
   { label: 'Profile', path: '/profile', Icon: IconUser },
 ];
 
@@ -240,6 +249,7 @@ export default function Navbar() {
         {navLinkHorizontal('Home', '/home')}
         {navLinkHorizontal('Map', '/map')}
         {navLinkHorizontal('Interactions', '/interactions')}
+        {navLinkHorizontal('Ride', '/ride')}
         {navLinkHorizontal('Profile', '/profile')}
         <button
           type='button'

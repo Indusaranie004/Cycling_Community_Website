@@ -8,6 +8,7 @@ import Navbar from './components/shared/Navbar';
 import HomePage from './pages/HomePage'
 import TempInteractions from './pages/TempInteractions';
 import NotificationHistory from './pages/NotificationHistory';
+import RidePage from './pages/RidePage';
 
 import { requestForToken, onMessageListener } from './firebase-config';
 import axios from 'axios';
@@ -75,6 +76,7 @@ export default function App() {
           <Route path='/' element={<PrivateRoute><HomePage /></PrivateRoute>} />
           <Route path='/interactions' element={<PrivateRoute><TempInteractions /></PrivateRoute>} />
           <Route path='/notifications' element={<PrivateRoute><NotificationHistory /></PrivateRoute>} />
+          <Route path='/ride' element={<PrivateRoute><RidePage /></PrivateRoute>} />
           
         </Routes>
       </BrowserRouter>
