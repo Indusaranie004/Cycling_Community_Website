@@ -1,25 +1,17 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Map from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import '../../styles/map/mapbox-cooperative-overrides.css';
 import RouteLayer from './RouteLayer';
 import WaypointLayer from './WaypointLayer';
+import { ROUTE_LINE_COLOR, ROUTE_LINE_VISIBILITY_MIN_ZOOM, ROUTE_FIT_BOUNDS } from '../../constants/routeMapView';
 
 const TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
-const FILTER_COLOURS = {
-  public: '#0158CA',
-  myRoutes: '#3235FF',
-  nearby: '#E42926',
-  saved: '#008A10',
-  preview: '#262626',
-};
-
-const ZOOM_THRESHOLD = 11;
-
 export default function MapContainer({
   mode, routes, waypoints, selectedRoute,
-  mapCenter, focusCoordinates, activeFilter, zoom, onZoomChange,
-  onMapClick, onRouteClick, onWaypointRemove,
+  mapCenter, focusCoordinates, zoom, onZoomChange,
+  onMapClick, onRouteClick, onWaypointRemove, onWaypointMove,
 }) {
   const mapRef = useRef();
   const [hoveredRoute, setHoveredRoute] = useState(null);
@@ -45,12 +37,16 @@ export default function MapContainer({
 
     mapRef.current.fitBounds(
       [[minLng, minLat], [maxLng, maxLat]],
-      { padding: 80, duration: 1200, maxZoom: 14 }
+      {
+        padding: ROUTE_FIT_BOUNDS.padding,
+        duration: ROUTE_FIT_BOUNDS.duration,
+        maxZoom: ROUTE_FIT_BOUNDS.maxZoom,
+      }
     );
   }, [focusCoordinates]);
 
   // Only register line layers as interactive when zoomed in enough to see them
-  const interactiveLayerIds = zoom >= ZOOM_THRESHOLD
+  const interactiveLayerIds = zoom >= ROUTE_LINE_VISIBILITY_MIN_ZOOM
     ? routes
         .filter(r => r.coordinates && r.coordinates.length >= 2)
         .map(r => `line-${r._id}`)
@@ -85,6 +81,59 @@ export default function MapContainer({
     setHoveredRoute(null);
   }, []);
 
+  // With cooperativeGestures, wheel/trackpad scroll does not zoom unless Ctrl/Cmd is held.
+  // Map two-finger trackpad scroll (wheel) to pan so pan vs zoom matches native map apps.
+  const handleWheel = useCallback((e) => {
+    const dom = e.originalEvent;
+    if (!dom) return;
+    if (dom.ctrlKey || dom.metaKey) return;
+    if (dom.deltaX === 0 && dom.deltaY === 0) return;
+    const map = mapRef.current?.getMap?.();
+    if (!map) return;
+    dom.preventDefault();
+    map.panBy([-dom.deltaX, -dom.deltaY], { animate: false });
+  }, []);
+
+  const handleMapLoad = useCallback((evt) => {
+    const map = evt.target;
+    map.touchZoomRotate.disableRotation();
+    // Apply brand color palette: #262626 dark, #ACBFA4 sage, #E2E8CE cream, #FF7F11 orange, #FF1B1C red
+    const layers = map.getStyle().layers;
+    layers.forEach((layer) => {
+      const id = layer.id;
+      const type = layer.type;
+      try {
+        if (type === 'background') {
+          map.setPaintProperty(id, 'background-color', '#E2E8CE');
+        } else if (type === 'fill') {
+          if (id.includes('water')) {
+            map.setPaintProperty(id, 'fill-color', '#ACBFA4');
+          } else if (
+            id.includes('park') || id.includes('green') ||
+            id.includes('grass') || id.includes('wood') ||
+            id.includes('nature') || id.includes('landuse')
+          ) {
+            map.setPaintProperty(id, 'fill-color', '#c8d4b0');
+          } else if (id.includes('land')) {
+            map.setPaintProperty(id, 'fill-color', '#E2E8CE');
+          }
+        } else if (type === 'line') {
+          if (id.includes('motorway') || id.includes('trunk')) {
+            map.setPaintProperty(id, 'line-color', '#FF7F11');
+          } else if (id.includes('primary')) {
+            map.setPaintProperty(id, 'line-color', '#d4a870');
+          } else if (id.includes('boundary') || id.includes('admin')) {
+            map.setPaintProperty(id, 'line-color', '#262626');
+          }
+        } else if (type === 'symbol') {
+          if (id.includes('label') || id.includes('place')) {
+            try { map.setPaintProperty(id, 'text-color', '#262626'); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    });
+  }, []);
+
   const cursor = hoveredRoute
     ? 'pointer'
     : mode === 'create'
@@ -97,22 +146,24 @@ export default function MapContainer({
         ref={mapRef}
         initialViewState={{ longitude: 80.63, latitude: 7.29, zoom: 11 }}
         style={{ width: '100%', height: '100%' }}
-        mapStyle='mapbox://styles/mapbox/outdoors-v12'
+        mapStyle='mapbox://styles/mapbox/light-v11'
         mapboxAccessToken={TOKEN}
+        onLoad={handleMapLoad}
         onClick={handleClick}
         onMove={handleMove}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onWheel={handleWheel}
         interactiveLayerIds={interactiveLayerIds}
         cursor={cursor}
         dragPan={true}
-        touchPan={true}
+        dragRotate={false}
         touchZoomRotate={true}
-        cooperativeGestures={false}
+        cooperativeGestures
       >
         <RouteLayer
           routes={routes}
-          lineColor={FILTER_COLOURS[activeFilter]}
+          lineColor={ROUTE_LINE_COLOR}
           selectedRouteId={selectedRoute?._id}
           onRouteClick={onRouteClick}
           zoom={zoom}
@@ -120,8 +171,9 @@ export default function MapContainer({
         {mode === 'create' && (
           <WaypointLayer
             waypoints={waypoints}
-            lineColor={FILTER_COLOURS.preview}
+            lineColor={ROUTE_LINE_COLOR}
             onRemove={onWaypointRemove}
+            onMove={onWaypointMove}
           />
         )}
       </Map>

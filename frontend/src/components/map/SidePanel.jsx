@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
 import { formatDurationMinutes } from '../../utils/timeFormat';
+import PrimaryBrandButton from '../shared/PrimaryBrandButton';
+import RoutePathCard from './RoutePathCard';
+import RouteMetricsPill from './RouteMetricsPill';
 
 function VisibilityBadge({ isPublic }) {
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-      ${isPublic ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border
+      ${isPublic
+        ? 'bg-emerald-50 text-emerald-600 border-emerald-300'
+        : 'bg-rose-50 text-rose-600 border-rose-300'}`}>
       {isPublic ? 'Public' : 'Private'}
     </span>
-  );
-}
-
-function MetricCard({ label, value }) {
-  return (
-    <div className='bg-gray-50 rounded-2xl p-4 text-center border border-gray-100'>
-      <p className='text-3xl font-bold text-brand-dark leading-tight'>{value}</p>
-      <p className='text-xs text-gray-400 mt-1'>{label}</p>
-    </div>
   );
 }
 
@@ -34,8 +30,8 @@ function RouteCard({ route, onSelectRoute, fmt, fmtTime }) {
   return (
     <button
       onClick={() => onSelectRoute(route)}
-      className='w-full text-left bg-gray-50 hover:bg-brand-sage/15 rounded-2xl p-4
-        transition-colors border border-gray-100 hover:border-brand-sage/40'
+      className='w-full text-left bg-gray-50 hover:bg-brand-orange/10 rounded-2xl p-4
+        transition-colors border border-gray-100 hover:border-brand-orange/50'
     >
       <div className='flex items-start justify-between gap-2'>
         <p className='text-sm font-semibold text-brand-dark truncate'>{route.name}</p>
@@ -60,8 +56,6 @@ export default function SidePanel({
   emptyMessage = 'No routes found.',
   selectedRoute,
   isEditing,
-  editDraft,
-  liveStats,
   userId,
   savedRouteIds,
   hasList,
@@ -70,10 +64,6 @@ export default function SidePanel({
   onToggleSave,
   onDelete,
   onUpdate,
-  onEditDraftChange,
-  onSaveEdit,
-  onCancelEdit,
-  onClose,
   embedded = false,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -86,11 +76,7 @@ export default function SidePanel({
   const scrollablePanelClass = 'panel-scrollbar';
   const panelTitle = view === 'detail' && selectedRoute
     ? selectedRoute.name
-    : `${listTitle} (${routesList.length})`;
-  const detailDistance = isEditing && liveStats ? liveStats.distance : selectedRoute?.distance;
-  const detailTime = isEditing && liveStats ? liveStats.estimatedTime : selectedRoute?.estimatedTime;
-  const canSubmitEdit = !!editDraft?.name?.trim();
-
+    : '';
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
     await onDelete(selectedRoute._id);
@@ -112,23 +98,18 @@ export default function SidePanel({
             <button
               onClick={onBackToList}
               className={`${embedded
-                ? 'text-brand-dark/70 hover:text-brand-dark'
-                : 'text-brand-sage hover:text-brand-cream'}
+                ? 'text-brand-dark/70 hover:text-brand-orange'
+                : 'text-brand-sage hover:text-brand-orange'}
                 transition-colors text-xl leading-none flex-shrink-0`}
               title='Back to list'
             >
               ←
             </button>
           )}
-          <h2 className='font-semibold text-sm truncate'>{panelTitle}</h2>
+          {panelTitle && (
+            <h2 className='font-semibold text-sm truncate'>{panelTitle}</h2>
+          )}
         </div>
-        <button
-          onClick={onClose}
-          className={`ml-2 text-xl leading-none hover:opacity-70 flex-shrink-0
-            ${embedded ? 'text-gray-500' : 'text-brand-cream/90'}`}
-        >
-          ×
-        </button>
       </div>
 
       {/* List View */}
@@ -157,135 +138,52 @@ export default function SidePanel({
         <div className='flex-1 flex flex-col overflow-hidden'>
           <div className={`flex-1 overflow-y-scroll p-4 space-y-4 bg-white ${scrollablePanelClass}`}>
             {isEditing ? (
+              <p className='text-sm text-gray-500 leading-relaxed'>
+                Adjust the route on the map, then save or cancel using the form above.
+              </p>
+            ) : (
               <>
-                <div className='bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3'>
-                  <div>
-                    <label className='text-xs text-gray-500 block mb-1'>Route name</label>
-                    <input
-                      type='text'
-                      value={editDraft?.name || ''}
-                      onChange={(e) => onEditDraftChange(prev => ({ ...prev, name: e.target.value }))}
-                      className='w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
-                        text-brand-dark focus:outline-none focus:border-brand-sage'
-                      placeholder='Route name'
-                    />
-                  </div>
-                  <div>
-                    <label className='text-xs text-gray-500 block mb-1'>Origin</label>
-                    <input
-                      type='text'
-                      value={editDraft?.startLocation || ''}
-                      onChange={(e) => onEditDraftChange(prev => ({ ...prev, startLocation: e.target.value }))}
-                      className='w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
-                        text-brand-dark focus:outline-none focus:border-brand-sage'
-                      placeholder='Start location'
-                    />
-                  </div>
-                  <div>
-                    <label className='text-xs text-gray-500 block mb-1'>Destination</label>
-                    <input
-                      type='text'
-                      value={editDraft?.endLocation || ''}
-                      onChange={(e) => onEditDraftChange(prev => ({ ...prev, endLocation: e.target.value }))}
-                      className='w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
-                        text-brand-dark focus:outline-none focus:border-brand-sage'
-                      placeholder='End location'
-                    />
-                  </div>
-                  <div className='flex items-center gap-2 pt-1'>
-                    {['Public', 'Private'].map(opt => {
-                      const nextPublic = opt === 'Public';
-                      const active = !!editDraft?.isPublic === nextPublic;
-                      return (
-                        <button
-                          key={opt}
-                          type='button'
-                          onClick={() => onEditDraftChange(prev => ({ ...prev, isPublic: nextPublic }))}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors
-                            ${active
-                              ? 'bg-brand-sage text-brand-dark'
-                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div>
+                  <VisibilityBadge isPublic={selectedRoute.isPublic} />
                 </div>
-              </>
-            ) : (
-              <div>
-                <VisibilityBadge isPublic={selectedRoute.isPublic} />
-              </div>
-            )}
-
-            <div className='bg-gray-50 rounded-2xl p-4 border border-gray-100'>
-              <p className='text-xs text-gray-400 uppercase tracking-wide mb-2'>Route</p>
-              <div className='flex items-start gap-2'>
-                <span className='w-2.5 h-2.5 rounded-full bg-brand-sage mt-1 flex-shrink-0' />
-                <p className='text-sm text-brand-dark leading-snug break-words'>
-                  {(isEditing ? editDraft?.startLocation : selectedRoute.startLocation) || 'Start point'}
-                </p>
-              </div>
-              <div className='ml-1 my-1 border-l-2 border-dashed border-gray-300 h-4' />
-              <div className='flex items-start gap-2'>
-                <span className='w-2.5 h-2.5 rounded-full bg-brand-orange mt-1 flex-shrink-0' />
-                <p className='text-sm text-brand-dark leading-snug break-words'>
-                  {(isEditing ? editDraft?.endLocation : selectedRoute.endLocation) || 'End point'}
-                </p>
-              </div>
-            </div>
-
-            <div className='grid grid-cols-2 gap-3'>
-              <MetricCard label='Distance' value={fmt(detailDistance || 0)} />
-              <MetricCard label='Est. Time' value={fmtTime(detailTime || 0)} />
-            </div>
-          </div>
-
-          <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
-            {isEditing ? (
-              <>
-                <PanelButton
-                  onClick={onSaveEdit}
-                  disabled={!canSubmitEdit}
-                  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark disabled:opacity-50 disabled:cursor-not-allowed'
-                >
-                  Save Updated Route
-                </PanelButton>
-                <PanelButton
-                  onClick={onCancelEdit}
-                  className='border-2 border-brand-dark text-brand-dark hover:bg-brand-sage/20 hover:border-brand-sage'
-                >
-                  Cancel Update
-                </PanelButton>
-              </>
-            ) : (
-              <>
-                <PanelButton
-                  onClick={() => onToggleSave(selectedRoute._id)}
-                  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
-                >
-                  {isSaved ? 'Unsave Route' : 'Save Route'}
-                </PanelButton>
-                {isOwner && (
-                  <>
-                    <PanelButton
-                      onClick={() => onUpdate(selectedRoute)}
-                      className='border-2 border-brand-dark text-brand-dark hover:bg-brand-sage/20 hover:border-brand-sage'
-                    >
-                      Update Route
-                    </PanelButton>
-                    <PanelButton
-                      onClick={handleDelete}
-                      className='bg-brand-red text-white hover:opacity-80'
-                    >
-                      {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
-                    </PanelButton>
-                  </>
-                )}
+                <RoutePathCard
+                  startLabel={selectedRoute.startLocation || 'Start point'}
+                  endLabel={selectedRoute.endLocation || 'End point'}
+                />
+                <RouteMetricsPill
+                  distanceMeters={selectedRoute?.distance ?? 0}
+                  estimatedTimeMinutes={selectedRoute?.estimatedTime ?? 0}
+                />
               </>
             )}
           </div>
+
+          {!isEditing && (
+            <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
+              <PrimaryBrandButton
+                onClick={() => onToggleSave(selectedRoute._id)}
+                className='w-full py-3 !rounded-2xl'
+              >
+                {isSaved ? 'Unsave Route' : 'Save Route'}
+              </PrimaryBrandButton>
+              {isOwner && (
+                <>
+                  <PanelButton
+                    onClick={() => onUpdate(selectedRoute)}
+                    className='border-2 border-brand-dark text-brand-dark hover:bg-brand-orange/10 hover:border-brand-orange'
+                  >
+                    Update Route
+                  </PanelButton>
+                  <PanelButton
+                    onClick={handleDelete}
+                    className='bg-brand-red text-white hover:bg-brand-orange hover:text-white'
+                  >
+                    {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
+                  </PanelButton>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

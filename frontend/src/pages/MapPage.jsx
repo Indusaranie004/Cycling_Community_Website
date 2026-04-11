@@ -5,8 +5,8 @@ import * as favSvc from '../services/favouriteService';
 import MapContainer from '../components/map/MapContainer';
 import FilterPanel from '../components/map/FilterPanel';
 import SidePanel from '../components/map/SidePanel';
-import CreateModeStats from '../components/map/CreateModeStats';
 import SaveRouteForm from '../components/map/SaveRouteForm';
+import PrimaryBrandButton from '../components/shared/PrimaryBrandButton';
 
 const EARTH_RADIUS_KM = 6371;
 const CYCLING_SPEED_KMH = 18;
@@ -55,6 +55,10 @@ function DraggableOverlay({
   }, [initialX, initialY]);
 
   const canStartDrag = useCallback((event) => {
+    // Allow normal interaction for controls inside the drag handle.
+    const interactiveTarget = event.target.closest('button, a, input, textarea, select, [role="button"]');
+    if (interactiveTarget) return false;
+
     if (!handleSelector || !overlayRef.current) return true;
     const handleEl = event.target.closest(handleSelector);
     return !!handleEl && overlayRef.current.contains(handleEl);
@@ -111,6 +115,7 @@ export default function MapPage() {
   const { userId } = useAuth();
   const [mode, setMode] = useState('display');
   const [activeFilter, setActiveFilter] = useState('public');
+  const [filterCounts, setFilterCounts] = useState({ public: 0, myRoutes: 0, saved: 0 });
   const [routes, setRoutes] = useState([]);
   const [waypoints, setWaypoints] = useState([]);
   const [selectedRoute, setSelectedRoute] = useState(null);
@@ -122,6 +127,7 @@ export default function MapPage() {
 
   // Side panel state
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [stackCollapsed, setStackCollapsed] = useState(false);
   const [sidePanelView, setSidePanelView] = useState('detail'); // 'list' | 'detail'
   const [nearbyRoutes, setNearbyRoutes] = useState([]);
   const [panelSource, setPanelSource] = useState('filter'); // 'filter' | 'nearby'
@@ -130,12 +136,6 @@ export default function MapPage() {
 
   // Update flow
   const [updatingRoute, setUpdatingRoute] = useState(null);
-  const [editDraft, setEditDraft] = useState({
-    name: '',
-    startLocation: '',
-    endLocation: '',
-    isPublic: true,
-  });
 
   // Load saved route IDs on mount
   useEffect(() => {
@@ -143,6 +143,10 @@ export default function MapPage() {
       .then(res => setSavedRouteIds(new Set(res.data.routes.map(r => r._id))))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    refreshFilterCounts();
+  }, [userId]); // eslint-disable-line
 
   // Fetch routes whenever filter changes
   useEffect(() => {
@@ -157,6 +161,12 @@ export default function MapPage() {
     setLiveStats(calculateRouteStats(waypoints));
   }, [mode, waypoints]);
 
+  useEffect(() => {
+    if (mode === 'create' && waypoints.length >= 2) {
+      setStackCollapsed(false);
+    }
+  }, [mode, waypoints.length]);
+
   async function fetchByFilter(filter) {
     try {
       let res;
@@ -166,6 +176,23 @@ export default function MapPage() {
       if (res) setRoutes(res.data.routes);
     } catch (err) {
       console.error('Failed to fetch routes', err);
+    }
+  }
+
+  async function refreshFilterCounts() {
+    try {
+      const [publicRes, myRoutesRes, savedRes] = await Promise.all([
+        routeSvc.getPublicRoutes(),
+        routeSvc.getUserRoutes(userId),
+        favSvc.getFavourites(),
+      ]);
+      setFilterCounts({
+        public: publicRes.data?.routes?.length || 0,
+        myRoutes: myRoutesRes.data?.routes?.length || 0,
+        saved: savedRes.data?.routes?.length || 0,
+      });
+    } catch (err) {
+      console.error('Failed to refresh filter counts', err);
     }
   }
 
@@ -222,6 +249,12 @@ export default function MapPage() {
   }
 
   function handleClosePanel() {
+    // In filter list mode, treat close as "clear filters" back to default public view.
+    if (sidePanelView === 'list' && panelSource === 'filter' && activeFilter !== 'public') {
+      handleFilterChange('public');
+      return;
+    }
+
     if (updatingRoute) {
       handleCancelUpdateInPanel();
     }
@@ -240,16 +273,11 @@ export default function MapPage() {
   function handleStartUpdate(route) {
     setUpdatingRoute(route);
     setWaypoints(route.coordinates);
-    setEditDraft({
-      name: route.name || '',
-      startLocation: route.startLocation || '',
-      endLocation: route.endLocation || '',
-      isPublic: !!route.isPublic,
-    });
     setSelectedRoute(route);
     setSidePanelView('detail');
     setSidePanelOpen(true);
     setMode('create');
+    focusRouteOnMap(route);
   }
 
   function switchToCreate() {
@@ -287,83 +315,45 @@ export default function MapPage() {
     setWaypoints(prev => prev.filter((_, i) => i !== index));
   }, []);
 
+  const handleWaypointMove = useCallback((index, newCoord) => {
+    setWaypoints(prev => prev.map((wp, i) => (i === index ? newCoord : wp)));
+  }, []);
+
   async function handleSaveRoute(name, isPublic) {
+    const updatingId = updatingRoute?._id;
+    const wasUpdating = !!updatingRoute;
+    const coordsSnapshot = wasUpdating && waypoints.length >= 2 ? [...waypoints] : null;
     try {
       let res;
-      if (updatingRoute) {
-        res = await routeSvc.updateRoute(updatingRoute._id, { name, coordinates: waypoints, isPublic });
+      if (wasUpdating) {
+        res = await routeSvc.updateRoute(updatingId, { name, coordinates: waypoints, isPublic });
       } else {
         res = await routeSvc.createRoute({ name, coordinates: waypoints, isPublic });
       }
       const saved = res.data.route;
       switchToDisplay();
       setRoutes(prev =>
-        updatingRoute
-          ? prev.map(r => r._id === updatingRoute._id ? saved : r)
+        wasUpdating
+          ? prev.map(r => r._id === updatingId ? saved : r)
           : [saved, ...prev]
+      );
+      setNearbyRoutes(prev =>
+        wasUpdating ? prev.map(r => r._id === updatingId ? saved : r) : prev
       );
       setSelectedRoute(saved);
       setSidePanelView('detail');
       setSidePanelOpen(true);
+      refreshFilterCounts();
+      if (wasUpdating && coordsSnapshot) {
+        setFocusCoordinates(null);
+        setTimeout(() => setFocusCoordinates(coordsSnapshot), 50);
+      }
     } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to save route.';
-      throw new Error(msg);
-    }
-  }
-
-  async function handleSaveUpdatedRoute() {
-    if (!updatingRoute) return;
-    const trimmedName = editDraft.name.trim();
-    if (!trimmedName || waypoints.length < 2) return;
-
-    try {
-      const res = await routeSvc.updateRoute(updatingRoute._id, {
-        name: trimmedName,
-        coordinates: waypoints,
-        isPublic: editDraft.isPublic,
-        startLocation: editDraft.startLocation.trim(),
-        endLocation: editDraft.endLocation.trim(),
-      });
-      const apiRoute = res.data?.route || {};
-      const recalculated = calculateRouteStats(waypoints);
-      const mergedUpdatedRoute = {
-        ...updatingRoute,
-        ...apiRoute,
-        _id: updatingRoute._id,
-        name: trimmedName,
-        coordinates: [...waypoints],
-        isPublic: editDraft.isPublic,
-        startLocation: editDraft.startLocation.trim(),
-        endLocation: editDraft.endLocation.trim(),
-        distance: Number.isFinite(apiRoute.distance) ? apiRoute.distance : recalculated.distance,
-        estimatedTime: Number.isFinite(apiRoute.estimatedTime) ? apiRoute.estimatedTime : recalculated.estimatedTime,
-      };
-
-      // Snapshot coords before state is cleared
-      const savedCoords = [...waypoints];
-
-      setRoutes(prev => prev.map(r => r._id === updatingRoute._id ? mergedUpdatedRoute : r));
-      setNearbyRoutes(prev => prev.map(r => r._id === updatingRoute._id ? mergedUpdatedRoute : r));
-
-      // Transition to display mode showing updated route details.
-      // setMode('display') must come before setUpdatingRoute(null) so the
-      // SidePanel (gated only on sidePanelOpen) stays mounted throughout.
-      setMode('display');
-      setSelectedRoute(mergedUpdatedRoute);
-      setSidePanelView('detail');
-      setSidePanelOpen(true);
-      setWaypoints([]);
-      setLiveStats(null);
-      setEditDraft({ name: '', startLocation: '', endLocation: '', isPublic: true });
-      setUpdatingRoute(null);
-
-      // Reset then re-set focusCoordinates to guarantee MapContainer's
-      // fitBounds useEffect fires even when coords content is unchanged
-      setFocusCoordinates(null);
-      setTimeout(() => setFocusCoordinates(savedCoords), 50);
-
-    } catch (err) {
-      console.error('Update route failed', err);
+      const data = err.response?.data;
+      const msg = data?.error
+        || (Array.isArray(data?.errors) ? data.errors[0] : null)
+        || 'Failed to save route.';
+      throw new Error(typeof msg === 'string' ? msg : 'Failed to save route.');
     }
   }
 
@@ -372,7 +362,6 @@ export default function MapPage() {
     setWaypoints([]);
     setLiveStats(null);
     setMode('display');
-    setEditDraft({ name: '', startLocation: '', endLocation: '', isPublic: true });
   }
 
   async function handleToggleSave(routeId) {
@@ -384,6 +373,7 @@ export default function MapPage() {
         await favSvc.addFavourite(routeId);
         setSavedRouteIds(prev => new Set(prev).add(routeId));
       }
+      refreshFilterCounts();
     } catch (err) {
       console.error('Toggle save failed', err);
     }
@@ -396,6 +386,7 @@ export default function MapPage() {
       setNearbyRoutes(prev => prev.filter(r => r._id !== routeId));
       setSelectedRoute(null);
       setSidePanelView('list');
+      refreshFilterCounts();
     } catch (err) {
       console.error('Delete route failed', err);
     }
@@ -417,6 +408,9 @@ export default function MapPage() {
     ? 'No routes found nearby. Try searching from a different location.'
     : 'No routes found for this filter.';
 
+  const saveOrUpdateFormOpen = mode === 'create' && waypoints.length >= 2;
+  const sidePanelEmbeddedVisible = sidePanelOpen && !saveOrUpdateFormOpen;
+
   return (
     <div className='h-screen w-screen overflow-hidden'>
       {/* TODO: Side navigation placeholder */}
@@ -429,43 +423,67 @@ export default function MapPage() {
           selectedRoute={selectedRoute}
           mapCenter={mapCenter}
           focusCoordinates={focusCoordinates}
-          activeFilter={activeFilter}
           zoom={zoom}
           onZoomChange={handleZoomChange}
           onMapClick={mode === 'create' ? handleWaypointAdd : undefined}
           onRouteClick={mode === 'display' ? handleRouteClick : undefined}
           onWaypointRemove={handleWaypointRemove}
+          onWaypointMove={handleWaypointMove}
         />
 
         {/* Unified control stack — draggable as one unit */}
         <DraggableOverlay initialX={24} initialY={18} zIndex={20} handleSelector='.drag-handle'>
-          <div className='w-[24rem] h-[calc(100vh-2.5rem)] flex flex-col bg-[#f8f9fc]/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 overflow-hidden'>
-            <div className='drag-handle cursor-move select-none px-4 py-2 bg-white border-b border-gray-200 text-[11px] text-gray-500 font-semibold tracking-wide uppercase'>
-              Tracking Stack
+          <div
+            className={`w-[24rem] flex flex-col bg-[#f8f9fc]/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 overflow-hidden
+              ${stackCollapsed
+                ? 'h-auto'
+                : sidePanelEmbeddedVisible
+                  ? 'h-[calc(100vh-2.5rem)]'
+                  : 'h-auto max-h-[calc(100vh-2.5rem)]'}`}
+          >
+            <div className='drag-handle cursor-move select-none px-4 py-2 bg-white border-b border-gray-200 text-[11px] text-gray-500 font-semibold tracking-wide uppercase flex items-center justify-between'>
+              <span>Route Explorer</span>
+              <button
+                type='button'
+                onClick={() => setStackCollapsed(prev => !prev)}
+                aria-label={stackCollapsed ? 'Expand panel' : 'Collapse panel'}
+                title={stackCollapsed ? 'Expand panel' : 'Collapse panel'}
+                className='inline-flex items-center justify-center w-7 h-7 rounded-md
+                  text-brand-dark hover:text-brand-orange hover:bg-brand-orange/10 transition-colors'
+              >
+                <span className='text-base leading-none'>
+                  {stackCollapsed ? '▾' : '▴'}
+                </span>
+              </button>
             </div>
 
-            <div className='p-3 space-y-3 bg-[#f8f9fc] border-b border-gray-200'>
+            {!stackCollapsed && (
+              <>
+                <div className='p-3 space-y-3 bg-[#f8f9fc] border-b border-gray-200'>
               <div className='flex items-center gap-2'>
-                <button
-                  onClick={handleToggleMode}
-                  className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
-                    bg-brand-dark text-brand-cream
-                    hover:bg-brand-sage hover:text-brand-dark transition-colors'
-                >
-                  {mode === 'display' ? '+ Create Route' : '← Back to Map'}
-                </button>
-
-                {mode === 'display' && (
-                  <button
-                    onClick={handleSearchArea}
-                    disabled={searchLoading}
-                    className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
-                      bg-brand-dark text-brand-cream
-                      hover:bg-brand-sage hover:text-brand-dark transition-colors
-                      disabled:opacity-50 disabled:cursor-not-allowed'
-                  >
-                    <span>{searchLoading ? 'Locating...' : 'Search in this Area'}</span>
-                  </button>
+                {mode === 'display' ? (
+                  <>
+                    <PrimaryBrandButton onClick={handleToggleMode} className='flex-1 px-4 py-2'>
+                      + Create Route
+                    </PrimaryBrandButton>
+                    <PrimaryBrandButton
+                      onClick={handleSearchArea}
+                      disabled={searchLoading}
+                      className='flex-1 px-4 py-2'
+                    >
+                      <span>{searchLoading ? 'Locating...' : 'Search in this Area'}</span>
+                    </PrimaryBrandButton>
+                  </>
+                ) : (
+                  <div className='flex w-full justify-start pl-2'>
+                    <button
+                      type='button'
+                      onClick={handleToggleMode}
+                      className='text-sm font-medium text-blue-600 hover:text-brand-orange transition-colors'
+                    >
+                      ← Back to Map
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -480,52 +498,52 @@ export default function MapPage() {
                   activeFilter={activeFilter}
                   onChange={handleFilterChange}
                   variant='inline'
+                  counts={filterCounts}
                 />
               )}
-            </div>
+                </div>
 
-            {sidePanelOpen && (
-              <div className='flex-1 min-h-0 bg-white'>
-                <SidePanel
-                  view={sidePanelView}
-                  routesList={listRoutes}
-                  listTitle={listTitle}
-                  emptyMessage={listEmptyMessage}
-                  selectedRoute={selectedRoute}
-                  isEditing={!!updatingRoute}
-                  editDraft={editDraft}
-                  liveStats={liveStats}
-                  userId={userId}
-                  savedRouteIds={savedRouteIds}
-                  hasList={listRoutes.length > 0 || sidePanelView === 'list'}
-                  onSelectRoute={handleSelectFromList}
-                  onBackToList={handleBackToList}
-                  onToggleSave={handleToggleSave}
-                  onDelete={handleDeleteRoute}
-                  onUpdate={handleStartUpdate}
-                  onEditDraftChange={setEditDraft}
-                  onSaveEdit={handleSaveUpdatedRoute}
-                  onCancelEdit={handleCancelUpdateInPanel}
-                  onClose={handleClosePanel}
-                  embedded={true}
-                />
-              </div>
+                {mode === 'create' && waypoints.length >= 2 && (
+                  <div className='flex-shrink-0 border-b border-gray-200 bg-white px-3 pt-3 pb-2'>
+                    <SaveRouteForm
+                      key={updatingRoute?._id || 'new-route'}
+                      waypoints={waypoints}
+                      liveStats={liveStats}
+                      onSave={handleSaveRoute}
+                      onCancel={updatingRoute ? handleCancelUpdateInPanel : switchToDisplay}
+                      isUpdate={!!updatingRoute}
+                      initialName={updatingRoute?.name || ''}
+                      initialIsPublic={updatingRoute?.isPublic !== false}
+                    />
+                  </div>
+                )}
+
+                {/* Hide list/detail panel while save/update form is open — avoids route list stacking under the form */}
+                {sidePanelEmbeddedVisible && (
+                  <div className='flex-1 min-h-0 bg-white'>
+                    <SidePanel
+                      view={sidePanelView}
+                      routesList={listRoutes}
+                      listTitle={listTitle}
+                      emptyMessage={listEmptyMessage}
+                      selectedRoute={selectedRoute}
+                      isEditing={!!updatingRoute}
+                      userId={userId}
+                      savedRouteIds={savedRouteIds}
+                      hasList={listRoutes.length > 0 || sidePanelView === 'list'}
+                      onSelectRoute={handleSelectFromList}
+                      onBackToList={handleBackToList}
+                      onToggleSave={handleToggleSave}
+                      onDelete={handleDeleteRoute}
+                      onUpdate={handleStartUpdate}
+                      embedded={true}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </DraggableOverlay>
-
-        {/* Create Mode overlays — only for new routes, not update flow */}
-        {mode === 'create' && !updatingRoute && waypoints.length >= 2 && (
-          <>
-            <CreateModeStats stats={liveStats} />
-            <SaveRouteForm
-              waypoints={waypoints}
-              onSave={handleSaveRoute}
-              onCancel={switchToDisplay}
-              isUpdate={!!updatingRoute}
-            />
-          </>
-        )}
 
         {/* Waypoint helper hint */}
         {mode === 'create' && waypoints.length < 2 && (

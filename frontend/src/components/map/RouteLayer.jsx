@@ -1,11 +1,12 @@
 import React from 'react';
 import { Source, Layer, Marker } from 'react-map-gl';
+import MapPinSvg from './MapPinSvg';
+import { ROUTE_LINE_VISIBILITY_MIN_ZOOM, ROUTE_ORIGIN_COLOR, ROUTE_DEST_COLOR } from '../../constants/routeMapView';
 
-const ZOOM_THRESHOLD = 11;
 const SELECTED_ROUTE_COLOUR = '#FF1B1C';
 
 export default function RouteLayer({ routes, lineColor, selectedRouteId, onRouteClick, zoom }) {
-  const showLines = zoom >= ZOOM_THRESHOLD;
+  const showLines = zoom >= ROUTE_LINE_VISIBILITY_MIN_ZOOM;
   const orderedRoutes = [
     ...routes.filter(route => route._id !== selectedRouteId),
     ...routes.filter(route => route._id === selectedRouteId),
@@ -56,22 +57,41 @@ export default function RouteLayer({ routes, lineColor, selectedRouteId, onRoute
                 />
               </Source>
             )}
-            {/* Start marker — always visible regardless of zoom */}
+            {/* Pin icons (tip at lat/lng) — not Mapbox default teardrops. */}
             <Marker
+              key={`${route._id}-start`}
               longitude={route.coordinates[0][0]}
               latitude={route.coordinates[0][1]}
-              color='#ACBFA4'
-              scale={isSelected ? 1.2 : 0.7}
-              onClick={() => onRouteClick && onRouteClick(route)}
-            />
-            {/* End marker — always visible regardless of zoom */}
+              anchor='bottom'
+              onClick={(e) => {
+                e.originalEvent?.stopPropagation?.();
+                onRouteClick?.(route);
+              }}
+            >
+              <div
+                className={`cursor-pointer transition-transform ${isSelected ? 'scale-110' : ''}`}
+                title='Start'
+              >
+                <MapPinSvg fill={ROUTE_ORIGIN_COLOR} width={isSelected ? 30 : 24} />
+              </div>
+            </Marker>
             <Marker
+              key={`${route._id}-end`}
               longitude={route.coordinates[route.coordinates.length - 1][0]}
               latitude={route.coordinates[route.coordinates.length - 1][1]}
-              color='#FF7F11'
-              scale={isSelected ? 1.2 : 0.7}
-              onClick={() => onRouteClick && onRouteClick(route)}
-            />
+              anchor='bottom'
+              onClick={(e) => {
+                e.originalEvent?.stopPropagation?.();
+                onRouteClick?.(route);
+              }}
+            >
+              <div
+                className={`cursor-pointer transition-transform ${isSelected ? 'scale-110' : ''}`}
+                title='End'
+              >
+                <MapPinSvg fill={ROUTE_DEST_COLOR} width={isSelected ? 30 : 24} />
+              </div>
+            </Marker>
           </React.Fragment>
         );
       })}
