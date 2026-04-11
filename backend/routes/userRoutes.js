@@ -13,3 +13,4 @@ router.post('/login', login);
 router.get('/profile', requireAuth, getProfile);
 
 module.exports = router;
+
