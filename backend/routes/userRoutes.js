@@ -19,4 +19,3 @@ router.get('/profile/community', requireAuth, getUserCommunityProfile);
 
 
 module.exports = router;
-
