@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { formatDurationMinutes } from '../../utils/timeFormat';
 import PrimaryBrandButton from '../shared/PrimaryBrandButton';
 import RoutePathCard from './RoutePathCard';
@@ -66,8 +66,6 @@ export default function SidePanel({
   onUpdate,
   embedded = false,
 }) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
   const isOwner = selectedRoute && selectedRoute.userId === userId;
   const isSaved = selectedRoute && savedRouteIds.has(selectedRoute._id);
 
@@ -77,10 +75,8 @@ export default function SidePanel({
   const panelTitle = view === 'detail' && selectedRoute
     ? selectedRoute.name
     : '';
-  const handleDelete = async () => {
-    if (!confirmDelete) { setConfirmDelete(true); return; }
-    await onDelete(selectedRoute._id);
-    setConfirmDelete(false);
+  const handleDeleteClick = () => {
+    onDelete(selectedRoute._id);
   };
 
   return (
@@ -175,10 +171,10 @@ export default function SidePanel({
                     Update Route
                   </PanelButton>
                   <PanelButton
-                    onClick={handleDelete}
+                    onClick={handleDeleteClick}
                     className='bg-brand-red text-white hover:bg-brand-orange hover:text-white'
                   >
-                    {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
+                    Delete Route
                   </PanelButton>
                 </>
               )}

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import ConfirmAlert from '../components/shared/ConfirmAlert';
 import { useAuth } from '../context/AuthContext';
 import * as routeSvc from '../services/routeService';
 import * as favSvc from '../services/favouriteService';
@@ -135,6 +136,27 @@ export default function MapPage() {
   // Update flow
   const [updatingRoute, setUpdatingRoute] = useState(null);
 
+  const discardActionRef = useRef(null);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [deleteConfirmRouteId, setDeleteConfirmRouteId] = useState(null);
+
+  const openDiscardDialog = useCallback((onConfirm) => {
+    discardActionRef.current = onConfirm;
+    setDiscardDialogOpen(true);
+  }, []);
+
+  const confirmDiscard = useCallback(() => {
+    setDiscardDialogOpen(false);
+    const fn = discardActionRef.current;
+    discardActionRef.current = null;
+    fn?.();
+  }, []);
+
+  const cancelDiscard = useCallback(() => {
+    setDiscardDialogOpen(false);
+    discardActionRef.current = null;
+  }, []);
+
   useEffect(() => {
     favSvc.getFavourites()
       .then(res => setSavedRouteIds(new Set(res.data.routes.map(r => r._id))))
@@ -206,6 +228,7 @@ export default function MapPage() {
           setSelectedRoute(null);
           setSidePanelView('list');
           setSidePanelOpen(true);
+          setStackCollapsed(false);
         } catch {
           setSearchError('Failed to fetch nearby routes.');
         } finally {
@@ -264,8 +287,6 @@ export default function MapPage() {
   }
 
   function handleStartUpdate(route) {
-    // Load original user waypoints for editing (not the Mapbox-snapped coordinates).
-    // Fallback to coordinates for legacy seeded routes that predate the waypoints field.
     const editableWaypoints = route.waypoints?.length >= 2
       ? route.waypoints
       : route.coordinates;
@@ -297,16 +318,28 @@ export default function MapPage() {
   const handleToggleMode = useCallback(() => {
     if (mode === 'display') {
       switchToCreate();
+    } else if (waypoints.length > 0) {
+      openDiscardDialog(() => switchToDisplay());
     } else {
-      if (waypoints.length > 0) {
-        if (window.confirm('Discard current waypoints and return to Display Mode?')) {
-          switchToDisplay();
-        }
-      } else {
-        switchToDisplay();
-      }
+      switchToDisplay();
     }
-  }, [mode, waypoints]);
+  }, [mode, waypoints, openDiscardDialog]);
+
+  const handleSaveFormCancel = useCallback(() => {
+    if (updatingRoute) {
+      openDiscardDialog(() => handleCancelUpdateInPanel());
+      return;
+    }
+    if (waypoints.length > 0) {
+      openDiscardDialog(() => switchToDisplay());
+      return;
+    }
+    switchToDisplay();
+  }, [updatingRoute, waypoints, openDiscardDialog]);
+
+  const handleRequestDeleteRoute = useCallback((routeId) => {
+    setDeleteConfirmRouteId(routeId);
+  }, []);
 
   const handleWaypointAdd = useCallback((lngLat) => {
     setWaypoints(prev => [...prev, [lngLat.lng, lngLat.lat]]);
@@ -413,8 +446,14 @@ export default function MapPage() {
   const sidePanelEmbeddedVisible = sidePanelOpen && !saveOrUpdateFormOpen;
 
   return (
-    <div className='h-screen w-screen overflow-hidden'>
-      <div className='relative h-full'>
+    <div
+      className='box-border h-screen max-h-screen overflow-hidden'
+      style={{
+        marginLeft: 'var(--map-sidebar-width, 260px)',
+        width: 'calc(100vw - var(--map-sidebar-width, 260px))',
+      }}
+    >
+      <div className='relative h-full min-h-0'>
         <MapContainer
           mode={mode}
           routes={routes}
@@ -508,7 +547,7 @@ export default function MapPage() {
                       waypoints={waypoints}
                       liveStats={liveStats}
                       onSave={handleSaveRoute}
-                      onCancel={updatingRoute ? handleCancelUpdateInPanel : switchToDisplay}
+                      onCancel={handleSaveFormCancel}
                       isUpdate={!!updatingRoute}
                       initialName={updatingRoute?.name || ''}
                       initialIsPublic={updatingRoute?.isPublic !== false}
@@ -531,7 +570,7 @@ export default function MapPage() {
                       onSelectRoute={handleSelectFromList}
                       onBackToList={handleBackToList}
                       onToggleSave={handleToggleSave}
-                      onDelete={handleDeleteRoute}
+                      onDelete={handleRequestDeleteRoute}
                       onUpdate={handleStartUpdate}
                       embedded={true}
                     />
@@ -549,6 +588,34 @@ export default function MapPage() {
           </div>
         )}
       </div>
+
+      <ConfirmAlert
+        open={discardDialogOpen}
+        title='Discard changes?'
+        description='You have unsaved changes. If you leave now, your edits will be lost.'
+        primaryLabel='Discard'
+        primaryTone='neutral'
+        onPrimary={confirmDiscard}
+        secondaryLabel='Keep editing'
+        onSecondary={cancelDiscard}
+        onClose={cancelDiscard}
+      />
+
+      <ConfirmAlert
+        open={deleteConfirmRouteId != null}
+        title='Delete route?'
+        description='This action cannot be undone.'
+        primaryLabel='Delete'
+        primaryTone='danger'
+        onPrimary={() => {
+          const id = deleteConfirmRouteId;
+          setDeleteConfirmRouteId(null);
+          if (id) void handleDeleteRoute(id);
+        }}
+        secondaryLabel='Cancel'
+        onSecondary={() => setDeleteConfirmRouteId(null)}
+        onClose={() => setDeleteConfirmRouteId(null)}
+      />
     </div>
   );
 }
