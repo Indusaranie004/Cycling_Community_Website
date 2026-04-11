@@ -1,5 +1,6 @@
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
+process.env.NODE_ENV = 'test';
 
 let mongoServer;
 

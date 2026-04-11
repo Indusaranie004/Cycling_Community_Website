@@ -64,6 +64,11 @@ export default function SidePanel({
   onToggleSave,
   onDelete,
   onUpdate,
+  onEditDraftChange,
+  onSaveEdit,
+  onCancelEdit,
+  onClose,
+  onAddFeedback,
   embedded = false,
 }) {
   const isOwner = selectedRoute && selectedRoute.userId === userId;
@@ -154,32 +159,56 @@ export default function SidePanel({
             )}
           </div>
 
-          {!isEditing && (
-            <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
-              <PrimaryBrandButton
-                onClick={() => onToggleSave(selectedRoute._id)}
-                className={`w-full py-3 !rounded-2xl ${!isOwner ? '!bg-[#FF7F11] hover:!bg-[#e67310]' : ''}`}
-              >
-                {isSaved ? 'Unsave Route' : 'Save Route'}
-              </PrimaryBrandButton>
-              {isOwner && (
-                <>
-                  <PanelButton
-                    onClick={() => onUpdate(selectedRoute)}
-                    className='border-2 border-brand-dark text-brand-dark hover:bg-brand-orange/10 hover:border-brand-orange'
-                  >
-                    Update Route
-                  </PanelButton>
-                  <PanelButton
-                    onClick={handleDeleteClick}
-                    className='bg-brand-red text-white hover:bg-brand-orange hover:text-white'
-                  >
-                    Delete Route
-                  </PanelButton>
-                </>
-              )}
-            </div>
-          )}
+          <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
+            {isEditing ? (
+              <>
+                <PanelButton
+                  onClick={onSaveEdit}
+                  disabled={!canSubmitEdit}
+                  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark disabled:opacity-50 disabled:cursor-not-allowed'
+                >
+                  Save Updated Route
+                </PanelButton>
+                <PanelButton
+                  onClick={onCancelEdit}
+                  className='border-2 border-brand-dark text-brand-dark hover:bg-brand-sage/20 hover:border-brand-sage'
+                >
+                  Cancel Update
+                </PanelButton>
+              </>
+            ) : (
+              <>
+                <PanelButton
+  onClick={() => onToggleSave(selectedRoute._id)}
+  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
+>
+  {isSaved ? 'Unsave Route' : 'Save Route'}
+</PanelButton>
+<PanelButton
+  onClick={() => onAddFeedback(selectedRoute)}
+  className='border-2 border-brand-sage text-brand-dark hover:bg-brand-sage/20'
+>
+  💬 Add Feedback
+</PanelButton>
+{isOwner && (
+                  <>
+                    <PanelButton
+                      onClick={() => onUpdate(selectedRoute)}
+                      className='border-2 border-brand-dark text-brand-dark hover:bg-brand-sage/20 hover:border-brand-sage'
+                    >
+                      Update Route
+                    </PanelButton>
+                    <PanelButton
+                      onClick={handleDelete}
+                      className='bg-brand-red text-white hover:opacity-80'
+                    >
+                      {confirmDelete ? 'Confirm Delete?' : 'Delete Route'}
+                    </PanelButton>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

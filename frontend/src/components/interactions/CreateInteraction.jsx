@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from "react";
 
-export default function CreateInteraction({ onClose, onSubmit }) {
+export default function CreateInteraction({ onClose, onSubmit, onPickLocation, pickedLocation, selectedRoute, initialType   }) {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [form, setForm] = useState({
-    intType: "hazard",
-    intDescription: "",
-    intRating: 5,
-    severityLevel: "low",
-    intLatitude: "",
-    intLongitude: "",
-    routeId: "", // Added from Schema
-    expiryTime: "3600000", // Added from Schema
-    fcmToken: "", // Added from Schema
-  });
+  intType: initialType || "hazard",
+  intDescription: "",
+  intRating: 5,
+  severityLevel: "low",
+  intLatitude: "",
+  intLongitude: "",
+  expiryTime: "3600000",
+  fcmToken: "",
+});
   const [file, setFile] = useState(null);
 
   // Auto-generate or "capture" an FCM token when the component mounts
@@ -21,6 +20,16 @@ export default function CreateInteraction({ onClose, onSubmit }) {
     const mockFCMToken = "fcm_" + Math.random().toString(36).substr(2, 16);
     setForm((prev) => ({ ...prev, fcmToken: mockFCMToken }));
   }, []);
+
+  useEffect(() => {
+  if (pickedLocation) {
+    setForm(prev => ({
+      ...prev,
+      intLatitude: pickedLocation.lat.toFixed(6),
+      intLongitude: pickedLocation.lng.toFixed(6),
+    }));
+  }
+}, [pickedLocation]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -42,6 +51,7 @@ export default function CreateInteraction({ onClose, onSubmit }) {
 
 const handleSubmit = async () => {
   if (!form.intDescription) return alert("Please add a description");
+  if (form.intType === "feedback" && !selectedRoute) return alert("Please select a route on the map before submitting feedback.");
 
   setLoading(true);
   try {
@@ -54,7 +64,7 @@ const handleSubmit = async () => {
     const savedToken = localStorage.getItem('fcmToken');
     data.append("fcmToken", savedToken || "");
 
-    if (form.routeId) data.append("routeId", form.routeId);
+    if (selectedRoute?._id) data.append("routeId", selectedRoute._id);
 
     if (form.intType === "feedback") {
       data.append("intRating", form.intRating);
@@ -105,9 +115,26 @@ const handleSubmit = async () => {
         </select>
 
         {/* Route ID (Optional Association) */}
-        <label className={labelClasses}>Associated Route ID (Optional)</label>
-        <input name="routeId" placeholder="Paste Route ID if applicable" value={form.routeId} onChange={handleChange} className={inputClasses} />
-
+        {/* Route Association — only shown for feedback */}
+{form.intType === "feedback" && (
+  <div className="mb-4">
+    <label className={labelClasses}>Associated Route</label>
+    {selectedRoute ? (
+      <div className="w-full border border-brand-sage rounded-lg p-2.5
+        bg-brand-sage/10 text-brand-dark text-sm">
+        <p className="font-semibold truncate">{selectedRoute.name}</p>
+        <p className="text-xs text-gray-500 mt-0.5 truncate">
+          {selectedRoute.startLocation || 'Start'} → {selectedRoute.endLocation || 'End'}
+        </p>
+      </div>
+    ) : (
+      <div className="w-full border border-dashed border-gray-300 rounded-lg p-2.5
+        bg-gray-50 text-gray-400 text-sm text-center">
+        Select a route on the map first
+      </div>
+    )}
+  </div>
+)}
         {/* Description */}
         <label className={labelClasses}>Description</label>
         <textarea name="intDescription" placeholder="Tell us what's happening..." value={form.intDescription} onChange={handleChange} rows="2" className={inputClasses} />
@@ -132,14 +159,30 @@ const handleSubmit = async () => {
                   <option value="high">High</option>
                 </select>
               </div>
-              <div>
-                <label className={labelClasses}>Latitude</label>
-                <input name="intLatitude" type="number" step="any" placeholder="7.273" value={form.intLatitude} onChange={handleChange} className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>Longitude</label>
-                <input name="intLongitude" type="number" step="any" placeholder="80.460" value={form.intLongitude} onChange={handleChange} className={inputClasses} />
-              </div>
+              <div className="col-span-2">
+  <label className={labelClasses}>Location</label>
+  {pickedLocation ? (
+    <div className="w-full border border-brand-sage rounded-lg p-2.5 mb-4
+      bg-brand-sage/10 text-brand-dark text-sm flex items-center justify-between">
+      <span>📍 {pickedLocation.lat.toFixed(5)}, {pickedLocation.lng.toFixed(5)}</span>
+      <button
+        onClick={onPickLocation}
+        className="text-xs text-brand-orange underline ml-2"
+      >
+        Change
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={onPickLocation}
+      className="w-full border-2 border-dashed border-brand-sage/50 rounded-lg
+        p-2.5 mb-4 text-brand-dark/60 text-sm hover:border-brand-orange
+        hover:text-brand-orange transition-colors text-center"
+    >
+      🗺️ Click to pick location on map
+    </button>
+  )}
+</div>
             </div>
             
             {/* --- UPDATED EXPIRY TIME DROPDOWN --- */}
@@ -170,7 +213,7 @@ const handleSubmit = async () => {
           <button onClick={onClose} className="px-5 py-2.5 font-semibold text-brand-dark hover:bg-brand-sage/20 rounded-xl transition-colors">Cancel</button>
           <button 
             onClick={handleSubmit} 
-            disabled={loading}
+            disabled={loading || (form.intType === "feedback" && !selectedRoute)}
             className={`px-6 py-2.5 bg-brand-orange text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-brand-orange/90'}`}
           >
             {loading ? "Submitting..." : "Submit Report"}

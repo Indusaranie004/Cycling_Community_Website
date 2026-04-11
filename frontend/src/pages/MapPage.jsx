@@ -8,6 +8,8 @@ import FilterPanel from '../components/map/FilterPanel';
 import SidePanel from '../components/map/SidePanel';
 import SaveRouteForm from '../components/map/SaveRouteForm';
 import PrimaryBrandButton from '../components/shared/PrimaryBrandButton';
+import CreateInteraction from '../components/interactions/CreateInteraction';
+import {createInteraction} from '../services/interactionService';
 
 const EARTH_RADIUS_KM = 6371;
 const CYCLING_SPEED_KMH = 18;
@@ -111,7 +113,7 @@ function DraggableOverlay({
 }
 
 export default function MapPage() {
-  const { userId } = useAuth();
+  const { userId, token } = useAuth();
   const [mode, setMode] = useState('display');
   const [activeFilter, setActiveFilter] = useState('public');
   const [filterCounts, setFilterCounts] = useState({ public: 0, myRoutes: 0, saved: 0 });
@@ -157,6 +159,13 @@ export default function MapPage() {
     discardActionRef.current = null;
   }, []);
 
+  //Interaction - hazard
+const [showCreateInteraction, setShowCreateInteraction] = useState(false);
+const [pickedLocation, setPickedLocation] = useState(null);
+const [pickingLocation, setPickingLocation] = useState(false);
+const [interactionInitialType, setInteractionInitialType] = useState('hazard');
+
+  // Load saved route IDs on mount
   useEffect(() => {
     favSvc.getFavourites()
       .then(res => setSavedRouteIds(new Set(res.data.routes.map(r => r._id))))
@@ -398,6 +407,12 @@ export default function MapPage() {
     setMode('display');
   }
 
+  function handleAddFeedback(route) {
+  setSelectedRoute(route);
+  setInteractionInitialType('feedback');
+  setShowCreateInteraction(true);
+}
+
   async function handleToggleSave(routeId) {
     try {
       if (savedRouteIds.has(routeId)) {
@@ -425,6 +440,16 @@ export default function MapPage() {
       console.error('Delete route failed', err);
     }
   }
+
+  async function handleCreateInteractionSubmit(formData) {
+  try {
+    await createInteraction(formData, token);
+    setPickedLocation(null);
+    setShowCreateInteraction(false);
+  } catch (err) {
+    console.error('Failed to create interaction', err);
+  }
+}
 
   const handleZoomChange = useCallback((newZoom) => {
     setZoom(newZoom);
@@ -463,7 +488,15 @@ export default function MapPage() {
           focusCoordinates={focusCoordinates}
           zoom={zoom}
           onZoomChange={handleZoomChange}
-          onMapClick={mode === 'create' ? handleWaypointAdd : undefined}
+          onMapClick={(lngLat) => {
+  if (mode === 'create') {
+    handleWaypointAdd(lngLat);
+  } else if (pickingLocation) {
+    setPickedLocation({ lng: lngLat.lng, lat: lngLat.lat });
+    setPickingLocation(false);
+    setShowCreateInteraction(true);
+  }
+}}
           onRouteClick={mode === 'display' ? handleRouteClick : undefined}
           onWaypointRemove={handleWaypointRemove}
           onWaypointMove={handleWaypointMove}
@@ -494,89 +527,112 @@ export default function MapPage() {
               </button>
             </div>
 
-            {!stackCollapsed && (
-              <>
-                <div className='p-3 space-y-3 bg-[#f8f9fc] border-b border-gray-200'>
-                  <div className='flex items-center gap-2'>
-                    {mode === 'display' ? (
-                      <>
-                        <PrimaryBrandButton onClick={handleToggleMode} className='flex-1 px-4 py-2'>
-                          + Create Route
-                        </PrimaryBrandButton>
-                        <PrimaryBrandButton
-                          onClick={handleSearchArea}
-                          disabled={searchLoading}
-                          className='flex-1 px-4 py-2'
-                        >
-                          <span>{searchLoading ? 'Locating...' : 'Search in this Area'}</span>
-                        </PrimaryBrandButton>
-                      </>
-                    ) : (
-                      <div className='flex w-full justify-start pl-2'>
-                        <button
-                          type='button'
-                          onClick={handleToggleMode}
-                          className='text-sm font-medium text-blue-600 hover:text-brand-orange transition-colors'
-                        >
-                          ← Back to Map
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {searchError && (
-                    <p className='text-brand-red text-xs bg-white rounded-lg px-2 py-1 border border-brand-red/20'>
-                      {searchError}
-                    </p>
-                  )}
+{!stackCollapsed && (
+            <>
+              <div className='p-3 space-y-3 bg-[#f8f9fc] border-b border-gray-200'>
+                <div className='flex items-center gap-2'>
+                  <button
+                    onClick={handleToggleMode}
+                    className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
+                      bg-brand-dark text-brand-cream
+                      hover:bg-brand-sage hover:text-brand-dark transition-colors'
+                  >
+                    {mode === 'display' ? '+ Create Route' : '← Back to Map'}
+                  </button>
 
                   {mode === 'display' && (
-                    <FilterPanel
-                      activeFilter={activeFilter}
-                      onChange={handleFilterChange}
-                      variant='inline'
-                      counts={filterCounts}
-                    />
+                    <>
+                      <button
+                        onClick={handleSearchArea}
+                        disabled={searchLoading}
+                        className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
+                          bg-brand-dark text-brand-cream
+                          hover:bg-brand-sage hover:text-brand-dark transition-colors
+                          disabled:opacity-50 disabled:cursor-not-allowed'
+                      >
+                        {searchLoading ? 'Locating...' : 'Search Area'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setInteractionInitialType('hazard');
+                          setShowCreateInteraction(true);
+                        }}
+                        className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
+                          bg-brand-orange text-white hover:opacity-90 transition-colors'
+                      >
+                        ⚠️ Report
+                      </button>
+                    </>
                   )}
                 </div>
 
-                {mode === 'create' && (
-                  <div className='flex-shrink-0 border-b border-gray-200 bg-white px-3 pt-3 pb-2'>
-                    <SaveRouteForm
-                      key={updatingRoute?._id || 'new-route'}
-                      waypoints={waypoints}
-                      liveStats={liveStats}
-                      onSave={handleSaveRoute}
-                      onCancel={handleSaveFormCancel}
-                      isUpdate={!!updatingRoute}
-                      initialName={updatingRoute?.name || ''}
-                      initialIsPublic={updatingRoute?.isPublic !== false}
-                    />
-                  </div>
+                {searchError && (
+                  <p className='text-brand-red text-xs bg-white rounded-lg px-2 py-1 border border-brand-red/20'>
+                    {searchError}
+                  </p>
                 )}
 
-                {sidePanelEmbeddedVisible && (
-                  <div className='flex-1 min-h-0 bg-white'>
-                    <SidePanel
-                      view={sidePanelView}
-                      routesList={listRoutes}
-                      listTitle={listTitle}
-                      emptyMessage={listEmptyMessage}
-                      selectedRoute={selectedRoute}
-                      isEditing={!!updatingRoute}
-                      userId={userId}
-                      savedRouteIds={savedRouteIds}
-                      hasList={listRoutes.length > 0 || sidePanelView === 'list'}
-                      onSelectRoute={handleSelectFromList}
-                      onBackToList={handleBackToList}
-                      onToggleSave={handleToggleSave}
-                      onDelete={handleRequestDeleteRoute}
-                      onUpdate={handleStartUpdate}
-                      embedded={true}
-                    />
-                  </div>
+                {mode === 'display' && (
+                  <FilterPanel
+                    activeFilter={activeFilter}
+                    onChange={handleFilterChange}
+                    variant='inline'
+                    // Note: Add counts={filterCounts} here if you still need the numbers on the filters
+                  />
                 )}
-              </>
+              </div>
+
+              {/* 
+                  Note: The Incoming branch removed SaveRouteForm from here. 
+                  If 'Create' mode now happens inside the SidePanel, leave this out. 
+                  If 'Create' mode still needs the separate form, keep the block below:
+              */}
+              {mode === 'create' && (
+                <div className='flex-shrink-0 border-b border-gray-200 bg-white px-3 pt-3 pb-2'>
+                  <SaveRouteForm
+                    key={updatingRoute?._id || 'new-route'}
+                    waypoints={waypoints}
+                    liveStats={liveStats}
+                    onSave={handleSaveRoute}
+                    onCancel={handleSaveFormCancel}
+                    isUpdate={!!updatingRoute}
+                    initialName={updatingRoute?.name || ''}
+                    initialIsPublic={updatingRoute?.isPublic !== false}
+                  />
+                </div>
+              )}
+
+              {/* SidePanel upgraded with new handlers from Incoming branch */}
+              {sidePanelOpen && (
+                <div className='flex-1 min-h-0 bg-white'>
+                  <SidePanel
+                    view={sidePanelView}
+                    routesList={listRoutes}
+                    listTitle={listTitle}
+                    emptyMessage={listEmptyMessage}
+                    selectedRoute={selectedRoute}
+                    isEditing={!!updatingRoute}
+                    editDraft={editDraft}
+                    liveStats={liveStats}
+                    userId={userId}
+                    savedRouteIds={savedRouteIds}
+                    hasList={listRoutes.length > 0 || sidePanelView === 'list'}
+                    onSelectRoute={handleSelectFromList}
+                    onBackToList={handleBackToList}
+                    onToggleSave={handleToggleSave}
+                    onDelete={handleDeleteRoute} // Ensure this matches your function name
+                    onUpdate={handleStartUpdate}
+                    onEditDraftChange={setEditDraft}
+                    onSaveEdit={handleSaveUpdatedRoute}
+                    onCancelEdit={handleCancelUpdateInPanel}
+                    onClose={handleClosePanel}
+                    onAddFeedback={handleAddFeedback}
+                    embedded={true}
+                  />
+                </div>
+              )}
+            </>
+          )}
             )}
           </div>
         </DraggableOverlay>
@@ -587,6 +643,33 @@ export default function MapPage() {
             Click on the map to add waypoints (minimum 2 required)
           </div>
         )}
+
+        {/* Hazard location picking hint */}
+{pickingLocation && (
+  <div className='absolute bottom-6 left-1/2 -translate-x-1/2 z-10
+    bg-brand-orange/90 text-white text-sm px-4 py-2 rounded-full'>
+    📍 Click on the map to place your hazard
+  </div>
+)}
+
+{/* Create Interaction Modal */}
+{showCreateInteraction && (
+  <CreateInteraction
+  onClose={() => {
+    setShowCreateInteraction(false);
+    setPickedLocation(null);
+    setPickingLocation(false);
+  }}
+  onSubmit={handleCreateInteractionSubmit}
+  onPickLocation={() => {
+    setShowCreateInteraction(false);
+    setPickingLocation(true);
+  }}
+  pickedLocation={pickedLocation}
+  selectedRoute={selectedRoute}
+  initialType={interactionInitialType}
+/>
+)}
       </div>
 
       <ConfirmAlert

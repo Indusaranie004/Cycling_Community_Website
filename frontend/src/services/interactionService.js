@@ -16,8 +16,10 @@
 //   return res.json();
 // };
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 export const createInteraction = async (formData, token) => {
-  const res = await fetch("http://localhost:3001/api/interactions", {
+  const res = await fetch(`${BASE_URL}/api/interactions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -36,7 +38,7 @@ export const createInteraction = async (formData, token) => {
 };
 
 export const getUserInteractions = async (token) => {
-  const res = await fetch("http://localhost:3001/api/interactions", {
+  const res = await fetch(`${BASE_URL}/api/interactions`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -49,7 +51,7 @@ export const getUserInteractions = async (token) => {
 
 // Update an existing interaction
 export const updateInteraction = async (id, formData, token) => {
-  const res = await fetch(`http://localhost:3001/api/interactions/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/interactions/${id}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -69,7 +71,7 @@ export const updateInteraction = async (id, formData, token) => {
 
 // Delete an interaction
 export const deleteInteraction = async (id, token) => {
-  const res = await fetch(`http://localhost:3001/api/interactions/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/interactions/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,

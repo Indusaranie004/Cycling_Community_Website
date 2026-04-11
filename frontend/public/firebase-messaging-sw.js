@@ -4,15 +4,18 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-// USE THE EXACT SAME CONFIG AS YOUR firebase-config.js
-firebase.initializeApp({
-  apiKey: "AIzaSyD9Yk24fdPcZrELZriLolon-MkEM5KrAbY", 
-  authDomain: "cycling-route-1382c.firebaseapp.com",
-  projectId: "cycling-route-1382c",
-  storageBucket: "cycling-route-1382c.firebasestorage.app",
-  messagingSenderId: "921165492719",
-  appId: "1:921165492719:web:6bdffdd0c40d6f41e2c61a"
-});
+const urlParams = new URLSearchParams(location.search);
+
+const firebaseConfig = {
+  apiKey: urlParams.get('apiKey'),
+  authDomain: urlParams.get('authDomain'),
+  projectId: urlParams.get('projectId'),
+  storageBucket: urlParams.get('storageBucket'),
+  messagingSenderId: urlParams.get('messagingSenderId'),
+  appId: urlParams.get('appId')
+};
+
+firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
@@ -24,9 +27,9 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title || "Hazard Alert";
   const notificationOptions = {
     body: payload.notification.body || "A hazard has expired.",
-    icon: '/logo192.png', // Ensure this file exists in your public folder
-    badge: '/logo192.png', // Small icon for mobile status bars
-    data: payload.data     // Carries extra info (like interactionId)
+    icon: '/logo192.png', 
+    badge: '/logo192.png', 
+    data: payload.data     
   };
 
   // This line physically shows the notification on the user's screen

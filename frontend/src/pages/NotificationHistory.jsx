@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 const NotificationList = () => {
     const [notifications, setNotifications] = useState([]);
 
     useEffect(() => {
         const fetchNotifications = async () => {
-            const res = await axios.get('http://localhost:3001/api/notifications', {
+            const res = await axios.get(`${BASE_URL}/api/notifications`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setNotifications(res.data);
