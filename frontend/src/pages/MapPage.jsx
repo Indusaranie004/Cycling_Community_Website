@@ -7,6 +7,8 @@ import FilterPanel from '../components/map/FilterPanel';
 import SidePanel from '../components/map/SidePanel';
 import CreateModeStats from '../components/map/CreateModeStats';
 import SaveRouteForm from '../components/map/SaveRouteForm';
+import CreateInteraction from '../components/interactions/CreateInteraction';
+import {createInteraction} from '../services/interactionService';
 
 const EARTH_RADIUS_KM = 6371;
 const CYCLING_SPEED_KMH = 18;
@@ -108,7 +110,7 @@ function DraggableOverlay({
 }
 
 export default function MapPage() {
-  const { userId } = useAuth();
+  const { userId, token } = useAuth();
   const [mode, setMode] = useState('display');
   const [activeFilter, setActiveFilter] = useState('public');
   const [routes, setRoutes] = useState([]);
@@ -136,6 +138,11 @@ export default function MapPage() {
     endLocation: '',
     isPublic: true,
   });
+
+  //Interaction - hazard
+const [showCreateInteraction, setShowCreateInteraction] = useState(false);
+const [pickedLocation, setPickedLocation] = useState(null);
+const [pickingLocation, setPickingLocation] = useState(false);
 
   // Load saved route IDs on mount
   useEffect(() => {
@@ -401,6 +408,16 @@ export default function MapPage() {
     }
   }
 
+  async function handleCreateInteractionSubmit(formData) {
+  try {
+    await createInteraction(formData, token);
+    setPickedLocation(null);
+    setShowCreateInteraction(false);
+  } catch (err) {
+    console.error('Failed to create interaction', err);
+  }
+}
+
   const handleZoomChange = useCallback((newZoom) => {
     setZoom(newZoom);
   }, []);
@@ -432,7 +449,15 @@ export default function MapPage() {
           activeFilter={activeFilter}
           zoom={zoom}
           onZoomChange={handleZoomChange}
-          onMapClick={mode === 'create' ? handleWaypointAdd : undefined}
+          onMapClick={(lngLat) => {
+  if (mode === 'create') {
+    handleWaypointAdd(lngLat);
+  } else if (pickingLocation) {
+    setPickedLocation({ lng: lngLat.lng, lat: lngLat.lat });
+    setPickingLocation(false);
+    setShowCreateInteraction(true);
+  }
+}}
           onRouteClick={mode === 'display' ? handleRouteClick : undefined}
           onWaypointRemove={handleWaypointRemove}
         />
@@ -456,17 +481,27 @@ export default function MapPage() {
                 </button>
 
                 {mode === 'display' && (
-                  <button
-                    onClick={handleSearchArea}
-                    disabled={searchLoading}
-                    className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
-                      bg-brand-dark text-brand-cream
-                      hover:bg-brand-sage hover:text-brand-dark transition-colors
-                      disabled:opacity-50 disabled:cursor-not-allowed'
-                  >
-                    <span>{searchLoading ? 'Locating...' : 'Search in this Area'}</span>
-                  </button>
-                )}
+  <>
+    <button
+      onClick={handleSearchArea}
+      disabled={searchLoading}
+      className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
+        bg-brand-dark text-brand-cream
+        hover:bg-brand-sage hover:text-brand-dark transition-colors
+        disabled:opacity-50 disabled:cursor-not-allowed'
+    >
+      {searchLoading ? 'Locating...' : 'Search Area'}
+    </button>
+    <button
+      onClick={() => setShowCreateInteraction(true)}
+      className='flex-1 px-4 py-2 rounded-xl font-semibold text-sm shadow-sm
+        bg-brand-orange text-white hover:opacity-90 transition-colors'
+    >
+      ⚠️ Report
+    </button>
+  </>
+)}
+                
               </div>
 
               {searchError && (
@@ -534,6 +569,31 @@ export default function MapPage() {
             Click on the map to add waypoints (minimum 2 required)
           </div>
         )}
+
+        {/* Hazard location picking hint */}
+{pickingLocation && (
+  <div className='absolute bottom-6 left-1/2 -translate-x-1/2 z-10
+    bg-brand-orange/90 text-white text-sm px-4 py-2 rounded-full'>
+    📍 Click on the map to place your hazard
+  </div>
+)}
+
+{/* Create Interaction Modal */}
+{showCreateInteraction && (
+  <CreateInteraction
+    onClose={() => {
+      setShowCreateInteraction(false);
+      setPickedLocation(null);
+      setPickingLocation(false);
+    }}
+    onSubmit={handleCreateInteractionSubmit}
+    onPickLocation={() => {
+      setShowCreateInteraction(false);
+      setPickingLocation(true);
+    }}
+    pickedLocation={pickedLocation}
+  />
+)}
       </div>
     </div>
   );

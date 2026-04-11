@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-export default function CreateInteraction({ onClose, onSubmit }) {
+export default function CreateInteraction({ onClose, onSubmit, onPickLocation, pickedLocation }) {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [form, setForm] = useState({
@@ -21,6 +21,16 @@ export default function CreateInteraction({ onClose, onSubmit }) {
     const mockFCMToken = "fcm_" + Math.random().toString(36).substr(2, 16);
     setForm((prev) => ({ ...prev, fcmToken: mockFCMToken }));
   }, []);
+
+  useEffect(() => {
+  if (pickedLocation) {
+    setForm(prev => ({
+      ...prev,
+      intLatitude: pickedLocation.lat.toFixed(6),
+      intLongitude: pickedLocation.lng.toFixed(6),
+    }));
+  }
+}, [pickedLocation]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -132,14 +142,30 @@ const handleSubmit = async () => {
                   <option value="high">High</option>
                 </select>
               </div>
-              <div>
-                <label className={labelClasses}>Latitude</label>
-                <input name="intLatitude" type="number" step="any" placeholder="7.273" value={form.intLatitude} onChange={handleChange} className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>Longitude</label>
-                <input name="intLongitude" type="number" step="any" placeholder="80.460" value={form.intLongitude} onChange={handleChange} className={inputClasses} />
-              </div>
+              <div className="col-span-2">
+  <label className={labelClasses}>Location</label>
+  {pickedLocation ? (
+    <div className="w-full border border-brand-sage rounded-lg p-2.5 mb-4
+      bg-brand-sage/10 text-brand-dark text-sm flex items-center justify-between">
+      <span>📍 {pickedLocation.lat.toFixed(5)}, {pickedLocation.lng.toFixed(5)}</span>
+      <button
+        onClick={onPickLocation}
+        className="text-xs text-brand-orange underline ml-2"
+      >
+        Change
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={onPickLocation}
+      className="w-full border-2 border-dashed border-brand-sage/50 rounded-lg
+        p-2.5 mb-4 text-brand-dark/60 text-sm hover:border-brand-orange
+        hover:text-brand-orange transition-colors text-center"
+    >
+      🗺️ Click to pick location on map
+    </button>
+  )}
+</div>
             </div>
             
             {/* --- UPDATED EXPIRY TIME DROPDOWN --- */}
