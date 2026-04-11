@@ -6,6 +6,9 @@ export default function Navbar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { token } = useAuth(); 
+  
+  if (!token) return null;
 
   const navLink = (label, path) => (
     <button
@@ -27,8 +30,10 @@ export default function Navbar() {
         EcoRide
       </span>
       <div className='flex items-center gap-2'>
-        {navLink('Map', '/')}
+        {navLink('Home', '/home')}
+        {navLink('Map', '/map')}
         {navLink('Profile', '/profile')}
+        {navLink('Interactions', '/interactions')}
         <button
           onClick={() => { logout(); navigate('/auth'); }}
           className='ml-4 px-4 py-2 rounded text-sm font-medium
