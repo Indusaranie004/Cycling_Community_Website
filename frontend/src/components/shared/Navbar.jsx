@@ -6,6 +6,9 @@ export default function Navbar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { token } = useAuth();
+
+  if (!token) return null;
 
   const navLink = (label, path) => (
     <button
@@ -28,6 +31,7 @@ export default function Navbar() {
       </span>
       <div className='flex items-center gap-2'>
         {navLink('Map', '/')}
+        {navLink('Community Hub', '/community')}
         {navLink('Profile', '/profile')}
         <button
           onClick={() => { logout(); navigate('/auth'); }}
