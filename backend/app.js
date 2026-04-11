@@ -16,7 +16,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/favourites', require('./routes/favouriteRoutes'));
 app.use('/api/interactions', require('./routes/interactionRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api/interactions', require('./routes/interactionRoutes'));
+// app.use('/api/interactions', require('./routes/interactionRoutes'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

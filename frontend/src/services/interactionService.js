@@ -91,3 +91,14 @@ export const getActiveHazards = async (token) => {
   if (!res.ok) throw new Error('Failed to fetch hazards');
   return res.json();
 };
+
+export const getRouteFeedback = async (routeId, token) => {
+  const res = await fetch(`${BASE_URL}/api/interactions/route/${routeId}/feedback`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error('Failed to fetch feedback');
+  return res.json();
+};

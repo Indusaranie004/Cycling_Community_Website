@@ -183,6 +183,23 @@ const getActiveHazards = async (req, res) => {
   }
 };
 
+// get all feedback for a specific route
+const getRouteFeedback = async (req, res) => {
+  try {
+    const feedback = await Interaction.find({
+      routeId: req.params.routeId,
+      intType: 'feedback',
+      isActive: true,
+    })
+      .populate('userId', 'name')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
     getAllInteractions,
     getInteractionById,
@@ -190,5 +207,6 @@ module.exports = {
     updateInteraction,
     deactivateInteraction,
     deleteInteraction,
-    getActiveHazards
+    getActiveHazards,
+    getRouteFeedback
 };

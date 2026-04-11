@@ -8,7 +8,8 @@ import SidePanel from '../components/map/SidePanel';
 import CreateModeStats from '../components/map/CreateModeStats';
 import SaveRouteForm from '../components/map/SaveRouteForm';
 import CreateInteraction from '../components/interactions/CreateInteraction';
-import { createInteraction, getActiveHazards } from '../services/interactionService';
+import { createInteraction, getActiveHazards, getRouteFeedback } from '../services/interactionService';
+import RouteFeedbackModal from '../components/interactions/RouteFeedbackModal';
 
 const EARTH_RADIUS_KM = 6371;
 const CYCLING_SPEED_KMH = 18;
@@ -32,6 +33,8 @@ function calculateRouteStats(coords) {
     estimatedTime: (distanceKm / CYCLING_SPEED_KMH) * 60,
   };
 }
+
+
 
 function DraggableOverlay({
   initialX,
@@ -146,6 +149,7 @@ const [pickingLocation, setPickingLocation] = useState(false);
 const [interactionInitialType, setInteractionInitialType] = useState('hazard');
 const [showHazards, setShowHazards] = useState(false);
 const [hazards, setHazards] = useState([]);
+const [feedbackRoute, setFeedbackRoute] = useState(null);
 
   // Load saved route IDs on mount
   useEffect(() => {
@@ -183,6 +187,10 @@ const [hazards, setHazards] = useState([]);
       console.error('Failed to fetch routes', err);
     }
   }
+
+  const handleViewFeedback = useCallback((route) => {
+  setFeedbackRoute(route);
+}, []);
 
   function handleSearchArea() {
     setSearchLoading(true);
@@ -582,6 +590,7 @@ const [hazards, setHazards] = useState([]);
                   onCancelEdit={handleCancelUpdateInPanel}
                   onClose={handleClosePanel}
 onAddFeedback={handleAddFeedback}
+onViewFeedback={handleViewFeedback}
 embedded={true}
                 />
               </div>
@@ -635,6 +644,14 @@ embedded={true}
   selectedRoute={selectedRoute}
   initialType={interactionInitialType}
 />
+)}
+
+{feedbackRoute && (
+  <RouteFeedbackModal
+    route={feedbackRoute}
+    token={token}
+    onClose={() => setFeedbackRoute(null)}
+  />
 )}
       </div>
     </div>

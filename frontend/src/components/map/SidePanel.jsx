@@ -75,6 +75,7 @@ export default function SidePanel({
   onCancelEdit,
   onClose,
   onAddFeedback,
+  onViewFeedback,
   embedded = false,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -273,6 +274,13 @@ export default function SidePanel({
   className='border-2 border-brand-sage text-brand-dark hover:bg-brand-sage/20'
 >
   💬 Add Feedback
+</PanelButton>
+
+<PanelButton
+  onClick={() => onViewFeedback(selectedRoute)}
+  className='border-2 border-gray-200 text-brand-dark hover:bg-gray-50'
+>
+  ⭐ View Feedback
 </PanelButton>
 {isOwner && (
                   <>
