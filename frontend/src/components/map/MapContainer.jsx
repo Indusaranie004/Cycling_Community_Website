@@ -132,6 +132,9 @@ export default function MapContainer({
         }
       } catch (_) {}
     });
+
+    try { map.setPaintProperty('settlement-label', 'text-color', '#000000'); } catch (_) {}
+    try { map.setPaintProperty('place-label', 'text-color', '#000000'); } catch (_) {}
   }, []);
 
   const cursor = hoveredRoute

@@ -30,6 +30,7 @@ export default function FilterPanel({ activeFilter, onChange, variant = 'dropdow
           {chips.map(chip => {
             const active = activeFilter === chip.key;
             const count = counts[chip.key] ?? 0;
+
             return (
               <button
                 key={chip.key}

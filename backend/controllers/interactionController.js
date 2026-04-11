@@ -6,14 +6,15 @@ const getAllInteractions = async (req, res) => {
         const { routeId, intType, isActive } = req.query;
         const filter = {};
 
-        filter.userId = req.userId;          // always filter by logged-in user
+        // filter by logged-in user
+        filter.userId = req.userId;          
         if (routeId) filter.routeId = routeId;
         if (intType) filter.intType = intType;
         if (isActive !== undefined) filter.isActive = isActive === 'true';
 
         const interactions = await Interaction.find(filter)
-            .populate('userId', 'name email')   // pulls name & email from User
-            .populate('routeId', 'name startLocation endLocation')  // pulls these fields from Route
+            .populate('userId', 'name email')
+            .populate('routeId', 'name startLocation endLocation')
             .sort({ createdAt: -1 });
 
         res.status(200).json(interactions);
@@ -42,25 +43,52 @@ const createInteraction = async (req, res) => {
         const {
             routeId, intLatitude, intLongitude,
             intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime, fcmToken
+            severityLevel, expiryTime, fcmToken
         } = req.body;
 
         const userId = req.userId; 
+
+        // 1. Handle Image from Cloudinary (Multer)
+        let intImgUrl = "";
+        if (req.file) {
+            intImgUrl = req.file.path; 
+        }
+
+        // 2. Data Cleaning (Prevent 400 errors from empty strings in Numbers/ObjectIDs)
+        const interactionData = {
+            userId,
+            intType,
+            intDescription,
+            severityLevel,
+            intImgUrl,
+            expiryTime,
+            fcmToken,
+            isActive: true
+        };
+
+        // Convert string numbers to real numbers
+        if (intRating) interactionData.intRating = Number(intRating);
+        if (intLatitude && intLatitude !== "") interactionData.intLatitude = Number(intLatitude);
+        if (intLongitude && intLongitude !== "") interactionData.intLongitude = Number(intLongitude);
+
+        // Only add routeId if it's a valid string (not empty)
+        if (routeId && routeId !== "" && routeId !== "null" && routeId !== "undefined") {
+            interactionData.routeId = routeId;
+        }
+
+        // 3. Manual Validation Logic
         if (intType === 'hazard' && !severityLevel) {
-            return res.status(400).json({ error: 'severityLevel is required for hazard interactions' });
+            return res.status(400).json({ error: 'severityLevel is required for hazard' });
         }
         if (intType === 'feedback' && !intRating) {
-            return res.status(400).json({ error: 'intRating is required for feedback interactions' });
+            return res.status(400).json({ error: 'intRating is required for feedback' });
         }
 
-        const interaction = await Interaction.create({
-            userId, routeId, intLatitude, intLongitude,
-            intType, intDescription, intRating,
-            severityLevel, intImgUrl, expiryTime, fcmToken
-        });
-
+        const interaction = await Interaction.create(interactionData);
         res.status(201).json(interaction);
+
     } catch (err) {
+        console.error("BACKEND POST ERROR:", err);
         if (err.name === 'ValidationError') {
             return res.status(400).json({ error: err.message });
         }
@@ -71,14 +99,34 @@ const createInteraction = async (req, res) => {
 // update interaction (partial update)
 const updateInteraction = async (req, res) => {
     try {
+        let updateData = { ...req.body };
+
+        // Handle image if a new one is uploaded
+        if (req.file) {
+            updateData.intImgUrl = req.file.path;
+        }
+
+        // Clean number fields to prevent CastErrors
+        if (updateData.intRating) updateData.intRating = Number(updateData.intRating);
+        if (updateData.intLatitude) updateData.intLatitude = Number(updateData.intLatitude);
+        if (updateData.intLongitude) updateData.intLongitude = Number(updateData.intLongitude);
+
+        // Remove routeId if it's an empty string or invalid
+        if (updateData.routeId === "" || updateData.routeId === "null") {
+            delete updateData.routeId;
+        }
+
         const interaction = await Interaction.findByIdAndUpdate(
             req.params.id,
-            { $set: req.body },
+            { $set: updateData },
             { new: true, runValidators: true }
         );
+
         if (!interaction) return res.status(404).json({ error: 'Interaction not found' });
         res.status(200).json(interaction);
+
     } catch (err) {
+        console.error("BACKEND PATCH ERROR:", err);
         if (err.name === 'ValidationError') {
             return res.status(400).json({ error: err.message });
         }

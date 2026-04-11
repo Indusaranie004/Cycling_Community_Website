@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import ConfirmAlert from '../components/shared/ConfirmAlert';
 import { useAuth } from '../context/AuthContext';
 import * as routeSvc from '../services/routeService';
 import * as favSvc from '../services/favouriteService';
@@ -55,10 +56,8 @@ function DraggableOverlay({
   }, [initialX, initialY]);
 
   const canStartDrag = useCallback((event) => {
-    // Allow normal interaction for controls inside the drag handle.
     const interactiveTarget = event.target.closest('button, a, input, textarea, select, [role="button"]');
     if (interactiveTarget) return false;
-
     if (!handleSelector || !overlayRef.current) return true;
     const handleEl = event.target.closest(handleSelector);
     return !!handleEl && overlayRef.current.contains(handleEl);
@@ -126,18 +125,38 @@ export default function MapPage() {
   const [zoom, setZoom] = useState(10);
 
   // Side panel state
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [sidePanelOpen, setSidePanelOpen] = useState(true);
   const [stackCollapsed, setStackCollapsed] = useState(false);
-  const [sidePanelView, setSidePanelView] = useState('detail'); // 'list' | 'detail'
+  const [sidePanelView, setSidePanelView] = useState('list');
   const [nearbyRoutes, setNearbyRoutes] = useState([]);
-  const [panelSource, setPanelSource] = useState('filter'); // 'filter' | 'nearby'
+  const [panelSource, setPanelSource] = useState('filter');
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
 
   // Update flow
   const [updatingRoute, setUpdatingRoute] = useState(null);
 
-  // Load saved route IDs on mount
+  const discardActionRef = useRef(null);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [deleteConfirmRouteId, setDeleteConfirmRouteId] = useState(null);
+
+  const openDiscardDialog = useCallback((onConfirm) => {
+    discardActionRef.current = onConfirm;
+    setDiscardDialogOpen(true);
+  }, []);
+
+  const confirmDiscard = useCallback(() => {
+    setDiscardDialogOpen(false);
+    const fn = discardActionRef.current;
+    discardActionRef.current = null;
+    fn?.();
+  }, []);
+
+  const cancelDiscard = useCallback(() => {
+    setDiscardDialogOpen(false);
+    discardActionRef.current = null;
+  }, []);
+
   useEffect(() => {
     favSvc.getFavourites()
       .then(res => setSavedRouteIds(new Set(res.data.routes.map(r => r._id))))
@@ -148,7 +167,6 @@ export default function MapPage() {
     refreshFilterCounts();
   }, [userId]); // eslint-disable-line
 
-  // Fetch routes whenever filter changes
   useEffect(() => {
     fetchByFilter(activeFilter);
   }, [activeFilter]); // eslint-disable-line
@@ -210,6 +228,7 @@ export default function MapPage() {
           setSelectedRoute(null);
           setSidePanelView('list');
           setSidePanelOpen(true);
+          setStackCollapsed(false);
         } catch {
           setSearchError('Failed to fetch nearby routes.');
         } finally {
@@ -232,7 +251,6 @@ export default function MapPage() {
   function focusRouteOnMap(route) {
     if (!route?.coordinates || route.coordinates.length < 2) return;
     const coordsCopy = [...route.coordinates];
-    // Clear first so selecting the same route again still retriggers fitBounds.
     setFocusCoordinates(null);
     setTimeout(() => setFocusCoordinates(coordsCopy), 0);
   }
@@ -249,12 +267,10 @@ export default function MapPage() {
   }
 
   function handleClosePanel() {
-    // In filter list mode, treat close as "clear filters" back to default public view.
     if (sidePanelView === 'list' && panelSource === 'filter' && activeFilter !== 'public') {
       handleFilterChange('public');
       return;
     }
-
     if (updatingRoute) {
       handleCancelUpdateInPanel();
     }
@@ -271,8 +287,12 @@ export default function MapPage() {
   }
 
   function handleStartUpdate(route) {
+    const editableWaypoints = route.waypoints?.length >= 2
+      ? route.waypoints
+      : route.coordinates;
+
     setUpdatingRoute(route);
-    setWaypoints(route.coordinates);
+    setWaypoints(editableWaypoints);
     setSelectedRoute(route);
     setSidePanelView('detail');
     setSidePanelOpen(true);
@@ -291,21 +311,35 @@ export default function MapPage() {
     setLiveStats(null);
     setUpdatingRoute(null);
     setMode('display');
+    setSidePanelOpen(true);
+    setSidePanelView('list');
   }
 
   const handleToggleMode = useCallback(() => {
     if (mode === 'display') {
       switchToCreate();
+    } else if (waypoints.length > 0) {
+      openDiscardDialog(() => switchToDisplay());
     } else {
-      if (waypoints.length > 0) {
-        if (window.confirm('Discard current waypoints and return to Display Mode?')) {
-          switchToDisplay();
-        }
-      } else {
-        switchToDisplay();
-      }
+      switchToDisplay();
     }
-  }, [mode, waypoints]);
+  }, [mode, waypoints, openDiscardDialog]);
+
+  const handleSaveFormCancel = useCallback(() => {
+    if (updatingRoute) {
+      openDiscardDialog(() => handleCancelUpdateInPanel());
+      return;
+    }
+    if (waypoints.length > 0) {
+      openDiscardDialog(() => switchToDisplay());
+      return;
+    }
+    switchToDisplay();
+  }, [updatingRoute, waypoints, openDiscardDialog]);
+
+  const handleRequestDeleteRoute = useCallback((routeId) => {
+    setDeleteConfirmRouteId(routeId);
+  }, []);
 
   const handleWaypointAdd = useCallback((lngLat) => {
     setWaypoints(prev => [...prev, [lngLat.lng, lngLat.lat]]);
@@ -408,14 +442,18 @@ export default function MapPage() {
     ? 'No routes found nearby. Try searching from a different location.'
     : 'No routes found for this filter.';
 
-  const saveOrUpdateFormOpen = mode === 'create' && waypoints.length >= 2;
+  const saveOrUpdateFormOpen = mode === 'create';
   const sidePanelEmbeddedVisible = sidePanelOpen && !saveOrUpdateFormOpen;
 
   return (
-    <div className='h-screen w-screen overflow-hidden'>
-      {/* TODO: Side navigation placeholder */}
-      {/* <SideNavigation /> */}
-      <div className='relative h-full'>
+    <div
+      className='box-border h-screen max-h-screen overflow-hidden'
+      style={{
+        marginLeft: 'var(--map-sidebar-width, 260px)',
+        width: 'calc(100vw - var(--map-sidebar-width, 260px))',
+      }}
+    >
+      <div className='relative h-full min-h-0'>
         <MapContainer
           mode={mode}
           routes={routes}
@@ -431,7 +469,6 @@ export default function MapPage() {
           onWaypointMove={handleWaypointMove}
         />
 
-        {/* Unified control stack — draggable as one unit */}
         <DraggableOverlay initialX={24} initialY={18} zIndex={20} handleSelector='.drag-handle'>
           <div
             className={`w-[24rem] flex flex-col bg-[#f8f9fc]/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 overflow-hidden
@@ -460,57 +497,57 @@ export default function MapPage() {
             {!stackCollapsed && (
               <>
                 <div className='p-3 space-y-3 bg-[#f8f9fc] border-b border-gray-200'>
-              <div className='flex items-center gap-2'>
-                {mode === 'display' ? (
-                  <>
-                    <PrimaryBrandButton onClick={handleToggleMode} className='flex-1 px-4 py-2'>
-                      + Create Route
-                    </PrimaryBrandButton>
-                    <PrimaryBrandButton
-                      onClick={handleSearchArea}
-                      disabled={searchLoading}
-                      className='flex-1 px-4 py-2'
-                    >
-                      <span>{searchLoading ? 'Locating...' : 'Search in this Area'}</span>
-                    </PrimaryBrandButton>
-                  </>
-                ) : (
-                  <div className='flex w-full justify-start pl-2'>
-                    <button
-                      type='button'
-                      onClick={handleToggleMode}
-                      className='text-sm font-medium text-blue-600 hover:text-brand-orange transition-colors'
-                    >
-                      ← Back to Map
-                    </button>
+                  <div className='flex items-center gap-2'>
+                    {mode === 'display' ? (
+                      <>
+                        <PrimaryBrandButton onClick={handleToggleMode} className='flex-1 px-4 py-2'>
+                          + Create Route
+                        </PrimaryBrandButton>
+                        <PrimaryBrandButton
+                          onClick={handleSearchArea}
+                          disabled={searchLoading}
+                          className='flex-1 px-4 py-2'
+                        >
+                          <span>{searchLoading ? 'Locating...' : 'Search in this Area'}</span>
+                        </PrimaryBrandButton>
+                      </>
+                    ) : (
+                      <div className='flex w-full justify-start pl-2'>
+                        <button
+                          type='button'
+                          onClick={handleToggleMode}
+                          className='text-sm font-medium text-blue-600 hover:text-brand-orange transition-colors'
+                        >
+                          ← Back to Map
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {searchError && (
-                <p className='text-brand-red text-xs bg-white rounded-lg px-2 py-1 border border-brand-red/20'>
-                  {searchError}
-                </p>
-              )}
+                  {searchError && (
+                    <p className='text-brand-red text-xs bg-white rounded-lg px-2 py-1 border border-brand-red/20'>
+                      {searchError}
+                    </p>
+                  )}
 
-              {mode === 'display' && (
-                <FilterPanel
-                  activeFilter={activeFilter}
-                  onChange={handleFilterChange}
-                  variant='inline'
-                  counts={filterCounts}
-                />
-              )}
+                  {mode === 'display' && (
+                    <FilterPanel
+                      activeFilter={activeFilter}
+                      onChange={handleFilterChange}
+                      variant='inline'
+                      counts={filterCounts}
+                    />
+                  )}
                 </div>
 
-                {mode === 'create' && waypoints.length >= 2 && (
+                {mode === 'create' && (
                   <div className='flex-shrink-0 border-b border-gray-200 bg-white px-3 pt-3 pb-2'>
                     <SaveRouteForm
                       key={updatingRoute?._id || 'new-route'}
                       waypoints={waypoints}
                       liveStats={liveStats}
                       onSave={handleSaveRoute}
-                      onCancel={updatingRoute ? handleCancelUpdateInPanel : switchToDisplay}
+                      onCancel={handleSaveFormCancel}
                       isUpdate={!!updatingRoute}
                       initialName={updatingRoute?.name || ''}
                       initialIsPublic={updatingRoute?.isPublic !== false}
@@ -518,7 +555,6 @@ export default function MapPage() {
                   </div>
                 )}
 
-                {/* Hide list/detail panel while save/update form is open — avoids route list stacking under the form */}
                 {sidePanelEmbeddedVisible && (
                   <div className='flex-1 min-h-0 bg-white'>
                     <SidePanel
@@ -534,7 +570,7 @@ export default function MapPage() {
                       onSelectRoute={handleSelectFromList}
                       onBackToList={handleBackToList}
                       onToggleSave={handleToggleSave}
-                      onDelete={handleDeleteRoute}
+                      onDelete={handleRequestDeleteRoute}
                       onUpdate={handleStartUpdate}
                       embedded={true}
                     />
@@ -545,7 +581,6 @@ export default function MapPage() {
           </div>
         </DraggableOverlay>
 
-        {/* Waypoint helper hint */}
         {mode === 'create' && waypoints.length < 2 && (
           <div className='absolute bottom-6 left-1/2 -translate-x-1/2 z-10
             bg-brand-dark/80 text-brand-cream text-sm px-4 py-2 rounded-full'>
@@ -553,6 +588,34 @@ export default function MapPage() {
           </div>
         )}
       </div>
+
+      <ConfirmAlert
+        open={discardDialogOpen}
+        title='Discard changes?'
+        description='You have unsaved changes. If you leave now, your edits will be lost.'
+        primaryLabel='Discard'
+        primaryTone='neutral'
+        onPrimary={confirmDiscard}
+        secondaryLabel='Keep editing'
+        onSecondary={cancelDiscard}
+        onClose={cancelDiscard}
+      />
+
+      <ConfirmAlert
+        open={deleteConfirmRouteId != null}
+        title='Delete route?'
+        description='This action cannot be undone.'
+        primaryLabel='Delete'
+        primaryTone='danger'
+        onPrimary={() => {
+          const id = deleteConfirmRouteId;
+          setDeleteConfirmRouteId(null);
+          if (id) void handleDeleteRoute(id);
+        }}
+        secondaryLabel='Cancel'
+        onSecondary={() => setDeleteConfirmRouteId(null)}
+        onClose={() => setDeleteConfirmRouteId(null)}
+      />
     </div>
   );
 }

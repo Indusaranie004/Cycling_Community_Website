@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 
 export default function AuthPage() {
   const [mode, setMode] = useState('login');        // 'login' | 'register'
@@ -11,7 +11,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth(); 
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));

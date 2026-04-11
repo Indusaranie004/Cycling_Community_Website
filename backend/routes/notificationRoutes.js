@@ -13,6 +13,7 @@ const {
     validateNotificationId,
     validateUpdateNotification
 } = require('../middleware/validation/validateNotification');
+const User = require('../models/User'); 
 
 // GET all
 router.get('/', requireAuth, validateNotificationQuery, getAllNotifications);
@@ -25,5 +26,17 @@ router.put('/:id', requireAuth, validateNotificationId, validateUpdateNotificati
 
 // DELETE
 router.delete('/:id', requireAuth, validateNotificationId, checkNotificationOwnership, deleteNotification);
+
+// Example Backend Route
+router.patch('/update-fcm', requireAuth, async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+        // userId comes from requireAuth middleware
+        await User.findByIdAndUpdate(req.userId, { fcmToken }, { returnDocument: 'after' });
+        res.status(200).json({ message: "Token updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = router;

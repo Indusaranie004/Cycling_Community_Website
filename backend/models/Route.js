@@ -22,6 +22,11 @@ const routeSchema = new mongoose.Schema({
     type: [[Number]],
     required: true
   },
+  // Original user-clicked waypoints — used to reload editable pins on update
+  waypoints: {
+    type: [[Number]],
+    default: []
+  },
   startPoint: {
     type: {
       type: String,
