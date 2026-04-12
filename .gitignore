@@ -1,3 +1,6 @@
+#macOS
+**/.DS_Store
+
 # Logs
 logs
 *.log
@@ -137,3 +140,9 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# firebase service key
+backend/config/serviceAccountKey.json
+
+# local DB seed script
+backend/seed.js
