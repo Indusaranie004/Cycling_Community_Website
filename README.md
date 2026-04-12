@@ -1,20 +1,111 @@
-# Cycling Community Website - Setup Guide
+# 🚴 Cycling Community Website
 
-Welcome to the Cycling Community Website! This guide will walk you through the setup process step by step.
+A community platform for cycling enthusiasts — built with React.
+
+---
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+- [Node.js](https://nodejs.org/) v14+
+- npm v6+ _(comes with Node.js)_
+- [Git](https://git-scm.com/)
 
-- **Node.js** (v14.0.0 or higher) - [Download here](https://nodejs.org/)
-- **npm** (v6.0.0 or higher) - Comes with Node.js
-- **Git** - [Download here](https://git-scm.com/)
-- **A code editor** - We recommend [VS Code](https://code.visualstudio.com/)
+---
 
-## Installation Steps
+## Getting Started
 
-### Step 1: Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Indusaranie004/Cycling_Community_Website.git
 cd Cycling_Community_Website
+```
+
+### 2. Switch to the development branch
+
+```bash
+git checkout dev2
+```
+
+### 3. Install dependencies
+
+```bash
+npm install
+```
+
+### 4. Configure environment variables
+
+Create a `.env` file in the project root:
+
+```env
+REACT_APP_API_URL=http://localhost:3000/api
+REACT_APP_ENV=development
+```
+
+### 5. Start the development server
+
+```bash
+npm start
+```
+
+The app will open at [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Scripts
+
+| Command | Description |
+|---|---|
+| `npm start` | Start the development server |
+| `npm run build` | Build for production |
+| `npm test` | Run tests |
+
+---
+
+## Project Structure
+
+```
+Cycling_Community_Website/
+├── public/               # Static assets
+└── src/
+    ├── components/       # Reusable React components
+    ├── pages/            # Page-level components
+    ├── styles/           # CSS/SCSS files
+    ├── App.js            # Root component
+    └── index.js          # Entry point
+```
+
+---
+
+## Troubleshooting
+
+**Port 3000 already in use**
+```bash
+npm start -- --port 3001
+```
+
+**Dependencies not installing**
+```bash
+npm cache clean --force
+npm install
+```
+
+**Module not found errors**
+```bash
+rm -rf node_modules
+npm install
+```
+
+---
+
+## Contributing
+
+1. Branch off from `dev2`: `git checkout -b feature/your-feature`
+2. Commit your changes: `git commit -m "Add your feature"`
+3. Push and open a PR targeting `dev2`
+
+---
+
+## Support
+
+Open an issue in the repository or reach out to the project maintainers.
