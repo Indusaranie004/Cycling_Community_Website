@@ -55,6 +55,14 @@ function IconLogOut({ className = 'w-5 h-5' }) {
   );
 }
 
+function IconBell({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} fill='none' stroke='currentColor' viewBox='0 0 24 24' aria-hidden>
+      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' />
+    </svg>
+  );
+}
+
 /** Must match MapPage `marginLeft` / `width` via `--map-sidebar-width` (use px, not rem). */
 const MAP_SIDEBAR_EXPANDED_PX = 260;
 const MAP_SIDEBAR_COLLAPSED_PX = 72;
@@ -63,6 +71,7 @@ const NAV_ITEMS = [
   { label: 'Home', path: '/home', Icon: IconHome },
   { label: 'Map', path: '/map', Icon: IconMap },
   { label: 'Interactions', path: '/interactions', Icon: IconInteractions },
+  { label: 'Notifications', path: '/notifications', Icon: IconBell },
   { label: 'Profile', path: '/profile', Icon: IconUser },
 ];
 
@@ -102,7 +111,7 @@ export default function Navbar() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useLayoutEffect(() => {
-    const sidebarPaths = ['/map', '/interactions', '/notifications']; // Add paths that need a sidebar
+    const sidebarPaths = ['/map', '/interactions', '/notifications']; 
 if (!token || !sidebarPaths.includes(pathname)) {
       document.documentElement.style.removeProperty('--map-sidebar-width');
       return undefined;
@@ -241,6 +250,7 @@ if (!token || !sidebarPaths.includes(pathname)) {
         {navLinkHorizontal('Home', '/home')}
         {navLinkHorizontal('Map', '/map')}
         {navLinkHorizontal('Interactions', '/interactions')}
+        {navLinkHorizontal('Notifications', '/notifications')}
         {navLinkHorizontal('Profile', '/profile')}
         <button
           type='button'
