@@ -22,6 +22,8 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/rides', rideRoutes);
 app.use('/api/impact', impactRoutes);
 app.use('/api/community-stats', communityRoutes); 
+app.use('/api/community/events', require('./routes/communityEventRoutes'));
+app.use('/api/community/challenges', require('./routes/communityChallengeRoutes'));
 
 scheduleMonthlyEmails();
 
