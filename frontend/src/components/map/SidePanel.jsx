@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { formatDurationMinutes } from '../../utils/timeFormat';
 import PrimaryBrandButton from '../shared/PrimaryBrandButton';
 import RoutePathCard from './RoutePathCard';
@@ -70,8 +70,10 @@ export default function SidePanel({
   onClose,
   onAddFeedback,
   onViewFeedback,
+  canSubmitEdit = true, 
   embedded = false,
 }) {
+   const [confirmDelete, setConfirmDelete] = useState(false);
   const isOwner = selectedRoute && selectedRoute.userId === userId;
   const isSaved = selectedRoute && savedRouteIds.has(selectedRoute._id);
 
@@ -81,6 +83,12 @@ export default function SidePanel({
   const panelTitle = view === 'detail' && selectedRoute
     ? selectedRoute.name
     : '';
+
+    const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    await onDelete(selectedRoute._id);
+    setConfirmDelete(false);
+  };
   const handleDeleteClick = () => {
     onDelete(selectedRoute._id);
   };
@@ -159,35 +167,11 @@ export default function SidePanel({
               </>
             )}
           </div>
-
-          {!isEditing && (
-            <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
-              <PrimaryBrandButton
-                onClick={() => onToggleSave(selectedRoute._id)}
-                className={`w-full py-3 !rounded-2xl ${!isOwner ? '!bg-[#FF7F11] hover:!bg-[#e67310]' : ''}`}
-              >
-                {isSaved ? 'Unsave Route' : 'Save Route'}
-              </PrimaryBrandButton>
-              {isOwner && (
-                <>
-                  <PanelButton
-                    onClick={() => onUpdate(selectedRoute)}
-                    className='border-2 border-brand-dark text-brand-dark hover:bg-brand-orange/10 hover:border-brand-orange'
-                  >
-                    Update Route
-                  </PanelButton>
-                  <PanelButton
-                    onClick={handleDeleteClick}
-                    className='bg-brand-red text-white hover:bg-brand-orange hover:text-white'
-                  >
-                    Delete Route
-                  </PanelButton>
-                </>
-              )}
-            </div>
-          )}
+{/* //////////////////////////////////////////////////////// */}
+          {/* //////////////////////////////////////////////////////// */}
           <div className='p-4 border-t border-gray-100 space-y-3 flex-shrink-0 bg-white'>
             {isEditing ? (
+              /* 1. Buttons shown ONLY when editing */
               <>
                 <PanelButton
                   onClick={onSaveEdit}
@@ -204,27 +188,34 @@ export default function SidePanel({
                 </PanelButton>
               </>
             ) : (
+              /* 2. Buttons shown when viewing (NOT editing) */
               <>
-                <PanelButton
-  onClick={() => onToggleSave(selectedRoute._id)}
-  className='bg-brand-dark text-brand-cream hover:bg-brand-sage hover:text-brand-dark'
->
-  {isSaved ? 'Unsave Route' : 'Save Route'}
-</PanelButton>
-<PanelButton
-  onClick={() => onAddFeedback(selectedRoute)}
-  className='border-2 border-brand-sage text-brand-dark hover:bg-brand-sage/20'
->
-  💬 Add Feedback
-</PanelButton>
+                {/* Main Save Action */}
+                <PrimaryBrandButton
+                  onClick={() => onToggleSave(selectedRoute._id)}
+                  className={`w-full py-3 !rounded-2xl ${!isOwner ? '!bg-[#FF7F11] hover:!bg-[#e67310]' : ''}`}
+                >
+                  {isSaved ? 'Unsave Route' : 'Save Route'}
+                </PrimaryBrandButton>
 
-<PanelButton
-  onClick={() => onViewFeedback(selectedRoute)}
-  className='border-2 border-gray-200 text-brand-dark hover:bg-gray-50'
->
-  ⭐ View Feedback
-</PanelButton>
-{isOwner && (
+                {/* Feedback Actions (Side by Side) */}
+                <div className="grid grid-cols-2 gap-2">
+                  <PanelButton
+                    onClick={() => onAddFeedback(selectedRoute)}
+                    className='border-2 border-brand-sage text-brand-dark hover:bg-brand-sage/20'
+                  >
+                    Give Feedback
+                  </PanelButton>
+                  <PanelButton
+                    onClick={() => onViewFeedback(selectedRoute)}
+                    className='border-2 border-gray-200 text-brand-dark hover:bg-gray-50'
+                  >
+                    View Feedbacks
+                  </PanelButton>
+                </div>
+
+                {/* Owner Only Actions */}
+                {isOwner && (
                   <>
                     <PanelButton
                       onClick={() => onUpdate(selectedRoute)}
@@ -243,6 +234,8 @@ export default function SidePanel({
               </>
             )}
           </div>
+{/* ///////////////////////////////////////////////////////////////////////// */}
+          {/* ///////////////////////////////////////////////////////////////////////// */}
         </div>
       )}
     </div>
