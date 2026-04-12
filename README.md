@@ -112,6 +112,38 @@ Open an issue in the repository or reach out to the project maintainers.
 
 ---
 
+## Deployment
+ 
+### Live URLs
+ 
+| Service | URL |
+|---|---|
+| Backend | https://routify-t9s0.onrender.com |
+| Frontend | https://cycling-community-website-frontend-ngk2ybbl7.vercel.app/auth |
+ 
+### Backend — Railway
+ 
+1. Push your backend code to GitHub
+2. Go to [railway.app](https://railway.app) and create a new project → **Deploy from GitHub repo**
+3. Select the repository and the correct branch (`dev2`)
+4. Add your environment variables under **Variables** (same as your `.env`)
+5. Railway will auto-deploy on every push — grab the generated URL from the **Settings** tab
+ 
+### Frontend — Vercel
+ 
+1. Go to [vercel.com](https://vercel.com) and import your GitHub repository
+2. Set the root directory to your frontend folder if needed
+3. Add environment variables under **Settings → Environment Variables**:
+   ```env
+   REACT_APP_API_URL=https://your-railway-url.up.railway.app/api
+   REACT_APP_ENV=production
+   ```
+4. Vercel auto-deploys on every push to `dev2` — your live URL is shown on the dashboard
+ 
+> Make sure `REACT_APP_API_URL` points to your Railway backend URL, not `localhost`.
+ 
+---
+
 ## API Integration Testing (Postman)
 
 ### Environment Setup
