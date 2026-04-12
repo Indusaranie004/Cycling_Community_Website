@@ -78,7 +78,7 @@ const MAP_SIDEBAR_COLLAPSED_PX = 72;
 const NAV_ITEMS = [
   { label: 'Home', path: '/home', Icon: IconHome },
   { label: 'Map', path: '/map', Icon: IconMap },
-  { label: 'Interactions', path: '/interactions', Icon: IconInteractions },
+  // { label: 'Interactions', path: '/interactions', Icon: IconInteractions },
   { label: 'Ride', path: '/ride', Icon: IconRide },
   { label: 'Notifications', path: '/notifications', Icon: IconBell },
   { label: 'Profile', path: '/profile', Icon: IconUser },
@@ -258,7 +258,7 @@ if (!token || !sidebarPaths.includes(pathname)) {
       <div className='flex items-center gap-2'>
         {navLinkHorizontal('Home', '/home')}
         {navLinkHorizontal('Map', '/map')}
-        {navLinkHorizontal('Interactions', '/interactions')}
+        {/* {navLinkHorizontal('Interactions', '/interactions')} */}
         {navLinkHorizontal('Ride', '/ride')}
         {navLinkHorizontal('Notifications', '/notifications')}
         {navLinkHorizontal('Profile', '/profile')}

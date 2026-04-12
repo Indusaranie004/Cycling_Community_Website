@@ -81,7 +81,7 @@ export default function App() {
           <Route path='/community/challenges' element={<PrivateRoute><ChallengesPage /></PrivateRoute>} />
           
           <Route path='*' element={<Navigate to='/' replace />} />
-          <Route path='/' element={<PrivateRoute><HomePage /></PrivateRoute>} />
+          <Route path='/' element={<HomePage />} />
           <Route path='/interactions' element={<PrivateRoute><TempInteractions /></PrivateRoute>} />
           <Route path='/notifications' element={<PrivateRoute><NotificationHistory /></PrivateRoute>} />
           <Route path='/ride' element={<PrivateRoute><RidePage /></PrivateRoute>} />

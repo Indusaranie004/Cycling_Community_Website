@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -44,6 +44,12 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+  if (user) {
+    navigate('/home');
+  }
+}, [user, navigate]);
 
   const onKey = (e) => e.key === 'Enter' && submit();
 

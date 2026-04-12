@@ -93,12 +93,22 @@ export const getActiveHazards = async (token) => {
 };
 
 export const getRouteFeedback = async (routeId, token) => {
-  const res = await fetch(`${BASE_URL}/api/interactions/route/${routeId}/feedback`, {
+  // Use backticks (`) and ensure no spaces around ${routeId}
+  const url = `${BASE_URL}/api/interactions/route/${routeId}/feedback`;
+  
+  const res = await fetch(url, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`, // Ensure space after Bearer
     },
   });
-  if (!res.ok) throw new Error('Failed to fetch feedback');
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    console.error("Feedback Fetch Error:", errorData);
+    throw new Error('Failed to fetch feedback');
+  }
+  
   return res.json();
 };
