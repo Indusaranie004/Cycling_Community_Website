@@ -1,0 +1,10 @@
+/*
+  Mapbox cooperativeGestures injects full-screen .mapboxgl-scroll-zoom-blocker /
+  .mapboxgl-touch-pan-blocker overlays. They still fire during trackpad pan because
+  wheel events hit ScrollZoomHandler before our custom pan handler. Hide those
+  overlays; gesture help is shown as a small non-blocking bar in MapContainer instead.
+*/
+.mapboxgl-scroll-zoom-blocker,
+.mapboxgl-touch-pan-blocker {
+  display: none !important;
+}

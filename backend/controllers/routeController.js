@@ -13,7 +13,7 @@ const createRoute = async (req, res) => {
       return res.status(409).json({ error: 'You already have a route with this name' });
     }
 
-    // Call Mapbox Directions API
+    // Call Mapbox Directions API with original user-clicked waypoints
     const directionsResponse = await axios.get(
       `https://api.mapbox.com/directions/v5/mapbox/cycling/${coordinates.map(c => c.join(',')).join(';')}`,
       {
@@ -45,14 +45,17 @@ const createRoute = async (req, res) => {
     const startLocation = startGeocode.data.features[0]?.place_name || 'Unknown';
     const endLocation = endGeocode.data.features[0]?.place_name || 'Unknown';
 
-    // Save to MongoDB - with startPoint
+    // Save to MongoDB
+    // - waypoints: original user clicks (used for editing)
+    // - coordinates: Mapbox-snapped road geometry (used for display)
     const newRoute = new Route({
       userId,
       name,
+      waypoints: coordinates,
       coordinates: route.geometry.coordinates,
       startPoint: {
         type: 'Point',
-        coordinates: coordinates[0]  // [longitude, latitude]
+        coordinates: coordinates[0]
       },
       distance,
       estimatedTime,
@@ -82,11 +85,11 @@ const getRoutes = async (req, res) => {
 
     if (userId) {
       query.userId = userId;
-      
+
       // If viewing others' routes, show public only (from middleware flag)
       if (req.showPublicOnly) {
         query.isPublic = true;
-      } 
+      }
       // If viewing own routes, allow filtering
       else if (isPublic !== undefined) {
         query.isPublic = isPublic === 'true';
@@ -113,6 +116,7 @@ const updateRoute = async (req, res) => {
   try {
     const existingRoute = req.route; // From checkRouteOwnership middleware
     const { name, coordinates, isPublic } = req.body;
+    // coordinates here = original user waypoints sent from frontend
 
     // Check duplicate name
     if (name && name !== existingRoute.name) {
@@ -126,13 +130,19 @@ const updateRoute = async (req, res) => {
     if (name !== undefined) updateData.name = name;
     if (isPublic !== undefined) updateData.isPublic = isPublic;
 
-    const coordinatesChanged = coordinates && 
-      JSON.stringify(existingRoute.coordinates) !== JSON.stringify(coordinates);
+    // Compare incoming waypoints against stored waypoints (not snapped coordinates)
+    const storedWaypoints = existingRoute.waypoints?.length
+      ? existingRoute.waypoints
+      : existingRoute.coordinates;
 
-    if (coordinatesChanged) {
+    const waypointsChanged = coordinates &&
+      JSON.stringify(storedWaypoints) !== JSON.stringify(coordinates);
+
+    if (waypointsChanged) {
+      // Send updated user waypoints (≤25) to Directions API for fresh snapping
       const directionsResponse = await axios.get(
         `https://api.mapbox.com/directions/v5/mapbox/cycling/${coordinates.map(c => c.join(',')).join(';')}`,
-        { params: { access_token: process.env.MAPBOX_TOKEN, geometries: 'geojson' }}
+        { params: { access_token: process.env.MAPBOX_TOKEN, geometries: 'geojson' } }
       );
 
       const route = directionsResponse.data.routes[0];
@@ -141,18 +151,20 @@ const updateRoute = async (req, res) => {
 
       const startGeocode = await axios.get(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${startCoord[0]},${startCoord[1]}.json`,
-        { params: { access_token: process.env.MAPBOX_TOKEN }}
+        { params: { access_token: process.env.MAPBOX_TOKEN } }
       );
 
       const endGeocode = await axios.get(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${endCoord[0]},${endCoord[1]}.json`,
-        { params: { access_token: process.env.MAPBOX_TOKEN }}
+        { params: { access_token: process.env.MAPBOX_TOKEN } }
       );
 
+      // Save both original waypoints and fresh snapped coordinates
+      updateData.waypoints = coordinates;
       updateData.coordinates = route.geometry.coordinates;
       updateData.startPoint = {
         type: 'Point',
-        coordinates: coordinates[0]  // Update start point too
+        coordinates: coordinates[0]
       };
       updateData.distance = route.distance;
       updateData.estimatedTime = route.duration / 60;
@@ -197,11 +209,10 @@ const deleteRoute = async (req, res) => {
 const getNearbyRoutes = async (req, res) => {
   try {
     const { lat, lng, radius = 5000 } = req.query;
-    // radius in meters, default 5km
 
     if (!lat || !lng) {
-      return res.status(400).json({ 
-        error: 'lat and lng query parameters are required' 
+      return res.status(400).json({
+        error: 'lat and lng query parameters are required'
       });
     }
 

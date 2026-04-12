@@ -67,7 +67,7 @@ export default function NearbySearch({ onSearch }) {
         disabled={isSearchDisabled}
         className='mt-3 w-full py-2 rounded-lg text-sm font-semibold
           bg-brand-orange text-white transition-opacity
-          disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90'
+          disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110'
       >
         {loading ? 'Locating...' : 'Use My Location'}
       </button>

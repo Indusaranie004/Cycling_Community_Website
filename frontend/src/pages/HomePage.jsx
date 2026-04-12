@@ -303,7 +303,7 @@ export default function HomePage() {
       )}
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 px-6 md:px-12 lg:px-24 overflow-hidden">
+      <section className="relative pt-28 pb-20 px-6 md:px-12 lg:px-24 overflow-hidden">
         <div className="absolute top-0 right-0 w-[700px] h-[600px] rounded-full bg-brand-sage/25 blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none" />
         <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div>
