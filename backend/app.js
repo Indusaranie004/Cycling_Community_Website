@@ -25,7 +25,9 @@ app.use('/api/community-stats', communityRoutes);
 app.use('/api/community/events', require('./routes/communityEventRoutes'));
 app.use('/api/community/challenges', require('./routes/communityChallengeRoutes'));
 
-scheduleMonthlyEmails();
+if (process.env.NODE_ENV !== 'test') {
+  scheduleMonthlyEmails();
+}
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
