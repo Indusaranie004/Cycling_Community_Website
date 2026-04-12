@@ -75,18 +75,9 @@ function EcoImpactDashboard({ rideStats, impactStats, ridesLoading }) {
   ];
 
   const rideItems = [
-    {
-      label: 'Total Rides',
-      value: rideStats?.total_rides ?? 0,
-    },
-    {
-      label: 'Total Distance',
-      value: `${(rideStats?.total_distance || 0).toFixed(1)} km`,
-    },
-    {
-      label: 'Total Ride Time',
-      value: fmtDuration(rideStats?.total_duration || 0),
-    },
+    { label: 'Total Rides',        value: rideStats?.total_rides ?? 0 },
+    { label: 'Total Distance',     value: `${(rideStats?.total_distance || 0).toFixed(1)} km` },
+    { label: 'Total Ride Time',    value: fmtDuration(rideStats?.total_duration || 0) },
     {
       label: 'Avg Distance / Ride',
       value: rideStats?.total_rides > 0
@@ -152,7 +143,7 @@ function EcoImpactDashboard({ rideStats, impactStats, ridesLoading }) {
         )}
       </div>
 
-      {/* Fun equivalents strip — only when there's data */}
+      {/* Fun equivalents strip */}
       {hasData && (
         <div className='bg-[#262626] rounded-2xl p-5'>
           <p className='text-[#ACBFA4] text-xs font-bold uppercase tracking-widest mb-4'>
@@ -199,14 +190,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
-
-  // Lazy-load ride data only when the tab is first opened
-  useEffect(() => {
-    if (activeTab === 'eco' && rideStats === null && !ridesLoading) {
-      fetchEcoData();
-    }
-  }, [activeTab]); // eslint-disable-line
+    fetchEcoData(); // fetch on mount so the StatCards always have real values
+  }, []); // eslint-disable-line
 
   const fetchProfile = async () => {
     try {
@@ -259,11 +244,20 @@ export default function ProfilePage() {
 
   const { user: userData, statistics, recentEvents, recentChallenges } = profile;
 
+  // Real ride/impact values — show '—' while the parallel fetch is still in flight
+  const realTotalDistance = ridesLoading
+    ? '—'
+    : `${parseFloat((rideStats?.total_distance || 0).toFixed(1)).toLocaleString()} km`;
+
+  const realCo2Saved = ridesLoading
+    ? '—'
+    : `${(impactStats?.totalCo2 || 0).toFixed(2)} kg`;
+
   const TABS = [
-    { key: 'overview', label: '📊 Overview' },
-    { key: 'eco',      label: '🌿 Eco Impact' },
-    { key: 'events',   label: '📅 My Events' },
-    { key: 'challenges', label: '🏆 My Challenges' },
+    { key: 'overview',    label: '📊 Overview' },
+    { key: 'eco',         label: '🌿 Eco Impact' },
+    { key: 'events',      label: '📅 My Events' },
+    { key: 'challenges',  label: '🏆 My Challenges' },
   ];
 
   return (
@@ -305,15 +299,9 @@ export default function ProfilePage() {
         <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
           <StatCard value={statistics.eventsJoined} label='Events Joined' />
           <StatCard value={statistics.challengesJoined} label='Challenges' />
-          <StatCard
-            value={`${parseFloat(statistics.totalDistance).toLocaleString()} km`}
-            label='Total Distance'
-          />
-          <StatCard
-            value={`${statistics.co2Saved} kg`}
-            label='CO₂ Saved'
-            accent
-          />
+          {/* ↓ These two now come from /api/rides/stats/me and /api/impact/stats/me */}
+          <StatCard value={realTotalDistance} label='Total Distance' />
+          <StatCard value={realCo2Saved} label='CO₂ Saved' accent />
         </div>
 
         {/* Admin Panel */}
