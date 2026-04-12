@@ -102,7 +102,8 @@ export default function Navbar() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useLayoutEffect(() => {
-    if (!token || pathname !== '/map') {
+    const sidebarPaths = ['/map', '/interactions', '/notifications']; // Add paths that need a sidebar
+if (!token || !sidebarPaths.includes(pathname)) {
       document.documentElement.style.removeProperty('--map-sidebar-width');
       return undefined;
     }
@@ -128,7 +129,7 @@ export default function Navbar() {
     </button>
   );
 
-  if (pathname === '/map') {
+  if (pathname === '/map' || pathname === '/interactions' || pathname === '/notifications') {
     const wClass = sidebarCollapsed ? 'w-[72px]' : 'w-[260px]';
 
     return (
