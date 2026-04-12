@@ -22,10 +22,11 @@ jobs:
         run: npm install
 
       - name: Run tests
-        run: npm test
         working-directory: backend
+        run: npx jest --testPathPattern="tests/" --runInBand --forceExit
         env:
-            NODE_ENV: test
+          NODE_ENV: test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       - name: Show test files
         run: ls -R tests
