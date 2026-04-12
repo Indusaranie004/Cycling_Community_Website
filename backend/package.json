@@ -38,7 +38,7 @@
     "supertest": "^7.2.2"
   },
   "jest": {
-    "setupFilesAfterEnv": [
+    "setupFilesAfterFramework": [
       "./tests/setup.js"
     ]
   }

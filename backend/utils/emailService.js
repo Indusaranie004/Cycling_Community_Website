@@ -2,8 +2,10 @@
 const { Resend } = require('resend');
 require('dotenv').config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+const resend = process.env.NODE_ENV === 'test'
+    ? { emails: { send: async () => ({ id: 'mock' }) } }
+    : new Resend(process.env.RESEND_API_KEY);
+    
 const sendMonthlyReport = async (userEmail, userName, stats, communityStats) => {
   
   const emailContent = `
