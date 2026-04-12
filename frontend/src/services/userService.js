@@ -8,7 +8,7 @@ export const getUserProfile = async () => {
 
 // Get community profile with statistics
 export const getUserCommunityProfile = async () => {
-  const response = await api.get('/users/profile/community');
+  const response = await api.get('api/users/profile/community');
   return response.data;
 };
 
