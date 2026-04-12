@@ -55,6 +55,14 @@ function IconLogOut({ className = 'w-5 h-5' }) {
   );
 }
 
+function IconRide({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11.5 8h4M7.5 13H5m3.5-5H7A2.5 2.5 0 004.5 10.5v1.25m6-1.25V9m3.5 4h1.5a2.5 2.5 0 012.5 2.5v1.25M17 19a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7 19a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' />
+    </svg>
+  );
+}
+
 function IconBell({ className = 'w-5 h-5' }) {
   return (
     <svg className={className} fill='none' stroke='currentColor' viewBox='0 0 24 24' aria-hidden>
@@ -71,6 +79,7 @@ const NAV_ITEMS = [
   { label: 'Home', path: '/home', Icon: IconHome },
   { label: 'Map', path: '/map', Icon: IconMap },
   { label: 'Interactions', path: '/interactions', Icon: IconInteractions },
+  { label: 'Ride', path: '/ride', Icon: IconRide },
   { label: 'Notifications', path: '/notifications', Icon: IconBell },
   { label: 'Profile', path: '/profile', Icon: IconUser },
 ];
@@ -111,7 +120,7 @@ export default function Navbar() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useLayoutEffect(() => {
-    const sidebarPaths = ['/map', '/interactions', '/notifications']; 
+    const sidebarPaths = ['/home', '/map', '/interactions', '/notifications', '/ride', '/profile']; 
 if (!token || !sidebarPaths.includes(pathname)) {
       document.documentElement.style.removeProperty('--map-sidebar-width');
       return undefined;
@@ -138,7 +147,7 @@ if (!token || !sidebarPaths.includes(pathname)) {
     </button>
   );
 
-  if (pathname === '/map' || pathname === '/interactions' || pathname === '/notifications') {
+  if (pathname === '/' || pathname === '/home' || pathname === '/map' || pathname === '/interactions' || pathname === '/notifications' || pathname === '/ride' || pathname === '/profile') {
     const wClass = sidebarCollapsed ? 'w-[72px]' : 'w-[260px]';
 
     return (
@@ -250,6 +259,7 @@ if (!token || !sidebarPaths.includes(pathname)) {
         {navLinkHorizontal('Home', '/home')}
         {navLinkHorizontal('Map', '/map')}
         {navLinkHorizontal('Interactions', '/interactions')}
+        {navLinkHorizontal('Ride', '/ride')}
         {navLinkHorizontal('Notifications', '/notifications')}
         {navLinkHorizontal('Profile', '/profile')}
         <button
