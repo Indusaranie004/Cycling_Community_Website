@@ -23,7 +23,7 @@ jobs:
 
       - name: Run tests
         working-directory: backend
-        run: npx jest --testPathPatterns="tests/" --runInBand --forceExit
+        run: npx jest --runInBand --forceExit
         env:
           NODE_ENV: test
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
