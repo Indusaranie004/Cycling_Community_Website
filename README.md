@@ -119,7 +119,7 @@ Open an issue in the repository or reach out to the project maintainers.
 | Service | URL |
 |---|---|
 | Backend | https://routify-t9s0.onrender.com |
-| Frontend | https://cycling-community-website.vercel.app/auth |
+| Frontend | https://cycling-community-website.vercel.app |
  
 ### Backend — Render
  
