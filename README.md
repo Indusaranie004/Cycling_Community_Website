@@ -1,422 +1,982 @@
-# 🚴 Eco-Friendly Community-Led Cycling Platform
+# 🚴 Cycling Community Website
 
-![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
-![Node.js](https://img.shields.io/badge/Node.js-v18+-green)
-![Express](https://img.shields.io/badge/Express-4.x-lightgrey)
-![MongoDB](https://img.shields.io/badge/MongoDB-In--Memory-blue)
-![Testing](https://img.shields.io/badge/Testing-Jest-red)
-![Mapbox](https://img.shields.io/badge/Mapbox-Enabled-blueviolet)
-![License](https://img.shields.io/badge/license-MIT-blue)
+A community platform for cycling enthusiasts — built with React.
 
-A web-based platform designed to promote sustainable transportation by enabling users to map safe cycling routes, track their rides, calculate their environmental impact, participate in community challenges, and report road hazards in real-time.
+---
 
-## 📖 Table of Contents
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [System Architecture](#-system-architecture)
-- [Getting Started](#-getting-started)
-- [Testing & Data Generation](#-testing--data-generation)
-- [API Documentation](#-api-documentation)
-- [Contributing](#-contributing)
+## Prerequisites
 
-## 🌟 Features
+- [Node.js](https://nodejs.org/) v14+
+- npm v6+ _(comes with Node.js)_
+- [Git](https://git-scm.com/)
 
-### 1. User Management & Authentication
-- Secure **User Registration and Login**.
-- **JWT (JSON Web Token)** based authentication.
-- Input validation using **Express-Validator**.
+---
 
-### 2. Route Planning & Discovery
-Enables cyclists to create, manage, and discover cycling routes. Routes are mapped with automatic distance and time calculation via Mapbox, and can be shared publicly or kept private. Users can also discover nearby public routes using location-based MongoDB geospatial search.
+## Getting Started
 
-- **Mapbox Integration:** Route mapping with automatic distance, estimated time, and location name calculation. 
-- **Geospatial Search:** Discover public cycling routes near any location using MongoDB geospatial indexing.
-- **Public vs. Private:** Share routes with the community or keep them personal.
-
-### 3. Ride Tracking & Eco-Impact
-The Ride Tracking & Eco-Impact component is a core sustainability-focused module of the Cycling Community Platform. It enables users to log their cycling activities while transforming raw ride data into measurable environmental and health impact insights. This component not only records ride metrics but also converts cycling behavior into meaningful environmental contributions at both individual and community levels.
-
-🎯Purpose of the Component
-
-* The primary objective of this module is to:
-
-* Encourage sustainable transportation habits
-
-* Quantify environmental benefits of cycling
-
-* Promote data-driven environmental awareness
-
-* Provide motivation through measurable eco achievements
-
-* Maintain real-time sustainability statistics for the community
-
-By bridging personal fitness data with environmental analytics, the system reinforces the value of cycling as an eco-friendly alternative to motorized transport.
-
-🚴Ride Tracking System
-
-The ride tracking mechanism captures essential cycling metrics including:
-
-* Distance traveled (km)
-
-* Duration (minutes)
-
-* Average speed (km/h)
-
-* Start and end times
-
-* Associated route (if applicable)
-
-To ensure reliability and fairness, the system incorporates validation logic to prevent unrealistic or manipulated data submissions. For example:
-
-* Distance must be greater than zero
-
-* Speed must fall within realistic cycling limits
-
-* Duration must correspond logically with distance traveled
-
-These safeguards maintain the integrity of environmental statistics and prevent fraudulent eco-score inflation.
-
-🌱 Eco-Impact Calculation Engine
-
-Once a ride is validated and recorded, the system automatically calculates its environmental and health impact using predefined sustainability constants.
-
-The calculation engine converts cycling distance into:
-
-* CO₂ emissions saved (kg) – based on average car emissions per kilometer
-
-* Fuel saved (liters) – calculated from average vehicle fuel consumption
-
-* Calories burned (kcal) – estimated using standard cycling energy expenditure
-
-* Eco Score – a gamified sustainability score combining environmental savings and ride effort
-
-This real-time transformation of physical activity into environmental metrics allows users to see the tangible positive effects of choosing cycling over fossil-fuel-based transportation.
-
-🌍 Community Environmental Analytics
-
-Beyond individual tracking, the module maintains aggregated sustainability metrics at the platform level. These include:
-
-* Total community cycling distance
-
-* Total CO₂ emissions saved by all users
-
-* Total number of rides recorded
-
-Community statistics serve multiple purposes:
-
-* Demonstrating collective environmental impact
-
-* Encouraging social motivation
-
-* Providing measurable sustainability insights
-
-* Supporting environmental awareness campaigns
-
-This transforms the platform from a personal fitness tracker into a community-driven environmental initiative.
-
-### 4. Community Hub & Gamification
-- **Events:** Users can create and join cycling meetups/events.
-- **Challenges:** Participate in distance-based challenges (e.g., "May 30km Challenge").
-- **Leaderboards:** Track progress against other participants in real-time.
-- **Progress Tracking:** Updates user progress within active challenges.
-
-### 5. Hazard Reporting & Notifications
-- *Hazard Reporting:* Report potholes, accidents, or blocked paths with severity levels (low, medium, high).
-- *Feedback Loop:* Rate routes (1–5) and provide feedback on road conditions.
-- *Automatic Expiry System:* Hazards are automatically deactivated when their expiry time is reached via a scheduled background job (node-cron).
-- *Push Notifications:* Integrated with *Firebase Cloud Messaging (FCM)* to notify users in real-time when their reported hazards expire.
-- *Notification Logging:* All notification attempts (sent or failed) are stored in the database for auditing.
-
-## 🛠 Tech Stack
-
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** MongoDB (Production) / In-Memory MongoDB (Testing)
-- **Validation:** Express-Validator
-- **Mapping:** Mapbox API / SDK
-- **Email Service:** Resend
-- **Testing:** Jest, Node-Mocks-HTTP, Postman
-- **Push Notifications:** Firebase Cloud Messaging (FCM) via firebase-admin
-- **Job Scheduling:** node-cron for automated hazard expiry checks
-
-## 🚀 Getting Started
-
-Follow these steps to set up the project locally.
-
-### Prerequisites
-*   Node.js (v18 or higher)
-*   NPM or Yarn
-
-### Installation
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/Indusaranie004/Cycling_Community_Website.git
-    cd Cycling_Community_Website
-    ```
-
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
-    *This installs core dependencies including `express`, `mongoose`, `mapbox`, `resend`, and `express-validator`.*
-
-3.  **Start the server**
-    ```bash
-    # For development (with nodemon)
-    npm run dev
-
-    # For production
-    npm start
-    ```
-    The server will start on `http://localhost:3001` (default).
-
-## 🧪 Testing & Data Generation
-
-This project utilizes **Jest** for the test runner and an **In-Memory MongoDB** approach for the testing environment.
-
-### Testing Tools
-*   **Jest:** The core testing framework.
-*   **Node-Mocks-HTTP:** Used to mock Express request and response objects for unit testing controllers.
-*   **MongoDB Memory Server:** Ensures a clean, isolated database for every test run.
-
-### Running Tests
-To execute the test suite:
+### 1. Clone the repository
 
 ```bash
-npm test
+git clone https://github.com/Indusaranie004/Cycling_Community_Website.git
+cd Cycling_Community_Website
 ```
 
-*The system will automatically spin up the in-memory database, seed mock data (users, routes, events), execute the API tests via Jest, and teardown the database upon completion.*
+### 2. Switch to the development branch
 
-## 📡 API Documentation
+```bash
+git checkout dev2
+```
 
-Below is a summary of the available API endpoints organized by functionality.
+### 3. Install dependencies
 
-### 👤 User Management
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/users/register` | Register a new user |
-| `POST` | `/api/users/login` | Authenticate user & receive Token |
-| `GET` | `/api/users/profile` | Get current user profile |
+```bash
+npm install
+```
 
-### 🏆 Community Hub (Events & Challenges)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/community/events` | Get all community events |
-| `POST` | `/api/community/events` | Create a new cycling event |
-| `POST` | `/api/community/events/:id/join` | Join a specific event |
-| `GET` | `/api/community/challenges` | List all active challenges |
-| `POST` | `/api/community/challenges` | Create a new challenge |
-| `PUT` | `/api/community/challenges/:id/progress` | Update user progress in a challenge |
-| `GET` | `/api/community/challenges/:id/leaderboard` | Get challenge leaderboard |
+### 4. Configure environment variables
 
-### 🗺️ Route Planning & Discovery
-Here is the formatted Markdown documentation for the **Route Planning** module. You can append this to your existing `README.md` or keep it as a separate `API.md` file.
+Create a `.env` file in the project root:
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/routes/newRoute` | Create a new cycling route with auto-calculated distance, time, and location names via Mapbox |
-| `GET` | `/api/routes/viewRoutes` | Get routes — all public, own (public + private), or another user's public routes |
-| `GET` | `/api/routes/nearby` | Find public cycling routes near a given location within a specified radius |
-| `PUT` | `/api/routes/updateRoute/:id` | Update a route by ID — owner or admin only. Recalculates Mapbox data if coordinates change |
-| `DELETE` | `/api/routes/deleteRoute/:id` | Delete a route by ID — owner or admin only |
+```env
+REACT_APP_API_URL=http://localhost:3000/api
+REACT_APP_ENV=development
+```
+
+### 5. Start the development server
+
+```bash
+npm start
+```
+
+The app will open at [http://localhost:3000](http://localhost:3000).
 
 ---
 
-# 🗺️ Route Planning API
-Manage cycling routes with automatic distance calculation, estimated travel time, and geospatial search capabilities.
+## Scripts
 
-**Base URL:** `/api/routes`  
-**Authentication:** All endpoints require a valid JWT Token.
-> **Header:** `Authorization: Bearer <your_token>`
-
-## 1. Create a New Route
-Creates a new cycling route. Distance, estimated time, and start/end location names are **automatically calculated via Mapbox** upon creation.
-
-- **Endpoint:** `POST /newRoute`
-- **Body:**
-  ```json
-  {
-    "name": "Morning Ride",
-    "coordinates": [[80.63, 7.28], [80.64, 7.29]], 
-    "isPublic": true
-  }
-  ```
-  *> Note: Coordinates must be in `[longitude, latitude]` format. A minimum of 2 points is required.*
-
-- **Success Response (201 Created):**
-  ```json
-  {
-    "message": "Route created successfully",
-    "route": {
-      "_id": "6996b49da1f12c1ffe1f3a9a",
-      "userId": "69a0001c11a1...",
-      "name": "Morning Ride",
-      "coordinates": [[80.63, 7.28], [80.64, 7.29]],
-      "startPoint": { "type": "Point", "coordinates": [80.63, 7.28] },
-      "distance": 5000,
-      "estimatedTime": 83.33,
-      "startLocation": "Kandy, Sri Lanka",
-      "endLocation": "Kandy, Sri Lanka",
-      "isPublic": true,
-      "createdAt": "2026-02-19T06:58:37.756Z"
-    }
-  }
-  ```
-- **Error Responses:**
-  - `400` - Validation Error (Missing name, invalid coordinates).
-  - `401` - Authentication required.
-  - `409` - A route with this name already exists for this user.
+| Command | Description |
+|---|---|
+| `npm start` | Start the development server |
+| `npm run build` | Build for production |
+| `npm test` | Run tests |
 
 ---
 
-## 2. Get All Routes
-Retrieves routes based on query parameters. Supports filtering by user and visibility.
+## Project Structure
 
-- **Endpoint:** `GET /viewRoutes`
-- **Query Parameters:**
-  | Parameter | Type | Description |
-  | :--- | :--- | :--- |
-  | `userId` | String | (Optional) Filter by specific User ID. |
-  | `isPublic` | Boolean | (Optional) Filter by visibility. |
-
-- **Usage Scenarios:**
-  | Scenario | Query | Result |
-  | :--- | :--- | :--- |
-  | **Community Feed** | *(No params)* | Returns all **public** routes from all users. |
-  | **My Routes** | `userId=<my_id>` | Returns **all** my routes (Public + Private). |
-  | **My Private Only** | `userId=<my_id>&isPublic=false` | Returns only my **private** routes. |
-  | **User Profile** | `userId=<other_id>` | Returns only **public** routes of that user. |
-
-- **Success Response (200 OK):**
-  ```json
-  {
-    "message": "Routes retrieved successfully",
-    "count": 2,
-    "routes": [...]
-  }
-  ```
+```
+Cycling_Community_Website/
+├── public/               # Static assets
+└── src/
+    ├── components/       # Reusable React components
+    ├── pages/            # Page-level components
+    ├── styles/           # CSS/SCSS files
+    ├── App.js            # Root component
+    └── index.js          # Entry point
+```
 
 ---
 
-## 3. Find Nearby Routes
-Returns **public** routes whose start point falls within a specified radius of the user's location, sorted by proximity.
+## Troubleshooting
 
-- **Endpoint:** `GET /nearby`
-- **Query Parameters:**
-  | Parameter | Type | Required | Description |
-  | :--- | :--- | :--- | :--- |
-  | `lat` | Float | **Yes** | Latitude (-90 to 90). |
-  | `lng` | Float | **Yes** | Longitude (-180 to 180). |
-  | `radius` | Integer | No | Search radius in meters (Default: 5000m). |
+**Port 3000 already in use**
+```bash
+npm start -- --port 3001
+```
 
-- **Example:**
-  `GET /api/routes/nearby?lat=7.2906&lng=80.6337&radius=10000`
+**Dependencies not installing**
+```bash
+npm cache clean --force
+npm install
+```
 
-- **Success Response (200 OK):**
-  ```json
-  {
-    "message": "Nearby routes retrieved successfully",
-    "count": 5,
-    "routes": [...]
-  }
-  ```
+**Module not found errors**
+```bash
+rm -rf node_modules
+npm install
+```
 
 ---
 
-## 4. Update a Route
-Updates an existing route. Only the **Route Owner** or an **Admin** can perform this action.
-*> Note: If `coordinates` are updated, the system automatically recalculates distance, duration, and location names via Mapbox.*
+## Contributing
 
-- **Endpoint:** `PUT /updateRoute/:id`
-- **Body:** (At least one field required)
-  ```json
-  {
-    "name": "Evening Ride",
-    "isPublic": false,
-    "coordinates": [[80.63, 7.28], [80.65, 7.30]]
-  }
-  ```
-- **Success Response (200 OK):**
-  ```json
-  {
-    "message": "Route updated successfully",
-    "route": { ... }
-  }
-  ```
-- **Error Responses:**
-  - `403` - Forbidden (You do not have permission).
-  - `404` - Route not found.
+1. Branch off from `dev2`: `git checkout -b feature/your-feature`
+2. Commit your changes: `git commit -m "Add your feature"`
+3. Push and open a PR targeting `dev2`
 
 ---
 
-## 5. Delete a Route
-Permanently removes a route. Only the **Route Owner** or an **Admin** can perform this action.
+## Support
 
-- **Endpoint:** `DELETE /deleteRoute/:id`
-- **Success Response (200 OK):**
-  ```json
-  {
-    "message": "Route deleted successfully",
-    "deletedRouteId": "6996b49da1f12c1ffe1f3a9a"
-  }
-  ```
+Open an issue in the repository or reach out to the project maintainers.
 
 ---
 
-## ⚙️ Technical Integrations
+## Deployment
+ 
+### Live URLs
+ 
+| Service | URL |
+|---|---|
+| Backend | https://routify-t9s0.onrender.com |
+| Frontend | https://cycling-community-website-frontend-ngk2ybbl7.vercel.app/auth |
+ 
+### Backend — Railway
+ 
+1. Push your backend code to GitHub
+2. Go to [railway.app](https://railway.app) and create a new project → **Deploy from GitHub repo**
+3. Select the repository and the correct branch (`dev2`)
+4. Add your environment variables under **Variables** (same as your `.env`)
+5. Railway will auto-deploy on every push — grab the generated URL from the **Settings** tab
+ 
+### Frontend — Vercel
+ 
+1. Go to [vercel.com](https://vercel.com) and import your GitHub repository
+2. Set the root directory to your frontend folder if needed
+3. Add environment variables under **Settings → Environment Variables**:
+   ```env
+   REACT_APP_API_URL=https://your-railway-url.up.railway.app/api
+   REACT_APP_ENV=production
+   ```
+4. Vercel auto-deploys on every push to `dev2` — your live URL is shown on the dashboard
+ 
+> Make sure `REACT_APP_API_URL` points to your Railway backend URL, not `localhost`.
+ 
+---
 
-### 🗺️ Mapbox API Integration
-The backend automatically communicates with Mapbox APIs during Route Creation (`POST`) and Updates (`PUT`).
-1.  **Directions API:** Calculates precise cycling distance and estimated duration based on the coordinates provided.
-2.  **Geocoding API:** Reverse geocodes the start and end coordinates to provide human-readable location names (e.g., "Kandy, Sri Lanka").
+## API Integration Testing (Postman)
 
-### 📍 MongoDB Geospatial Features
-Routes are stored using **GeoJSON** format for efficient spatial querying.
-- **Schema:** `startPoint: { type: "Point", coordinates: [lng, lat] }`
-- **Indexing:** A `2dsphere` index is applied to the `startPoint` field.
-- **Querying:** The `/nearby` endpoint uses the MongoDB `$near` operator to perform fast geospatial queries.
+### Environment Setup
 
-### 🚴 Rides & Impact
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/rides` | Get all rides |
-| `POST` | `/api/rides` | Create a new ride |
-| `PUT` | `/api/rides/:id` | Update a ride by ID |
-| `DELETE` | `/api/rides/:id` | Delete a ride by ID |
-| `GET` | `/api/rides/user/:userId` | Get all rides for a specific user |
-| `GET` | `/api/community-stats` | Get aggregated community statistics |
-| `GET` | `/api/impact/:rideId` | Get environmental impact for a specific ride |
-| `GET` | `/api/impact/stats/:userId` | Get total impact statistics for a specific user |
+Update your existing Postman environment with the live Render URL. All other variables are auto-filled when you run Login.
 
-### ⚠️ Hazards & Notifications
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/interactions` | Get all hazards/feedback (filter by userId, routeId, intType, isActive) |
-| `POST` | `/api/interactions` | Report a hazard or submit feedback |
-| `GET` | `/api/interactions/:id` | Get a single interaction |
-| `PATCH` | `/api/interactions/:id` | Partially update an interaction |
-| `PATCH` | `/api/interactions/:id/deactivate` | Deactivate a hazard (soft delete) |
-| `DELETE` | `/api/interactions/:id` | Permanently delete an interaction |
-| `GET` | `/api/notifications` | Get all notifications (filter by userId) |
-| `POST` | `/api/notifications/trigger-expiry-check` | Manually trigger hazard expiry job |
-| `PUT` | `/api/notifications/:id` | Update a notification record |
-| `DELETE` | `/api/notifications/:id` | Delete a notification record |
+| Variable | Value |
+|---|---|
+| `baseURL` | `https://your-render-url.onrender.com` |
+| `token` | _(auto-filled on Login)_ |
+| `userId` | _(auto-filled on Login)_ |
+| `RideToken` | _(auto-filled on Login)_ |
+| `adminToken` | _(auto-filled on Login)_ |
+| `routeId` | _(auto-filled on create route)_ |
+| `rideId` | _(auto-filled on create ride)_ |
+| `interactionId` | _(auto-filled on create hazard)_ |
+| `eventId` | _(auto-filled on create event)_ |
 
-## 🤝 Contributing
-
-Contributions are always welcome!
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+To update: click the eye icon → **Edit** → update `baseURL` → add any missing empty variables → **Save**.
 
 ---
-*Built with ❤️ for a greener planet.*
+
+### Step 1: Fix Hardcoded `localhost` URLs
+
+Several requests still use `http://localhost:3001`. Replace them with `{{baseURL}}`:
+
+- **user-management** — Register, Login, User Register
+- **Notifications** — all 4 requests
+- **community-hub** — all requests
+- **hazard-and-feedback** — all requests
+- **ride-and-eco-impact** — Get all rides, Get Ride by ID
+
+---
+
+### Step 2: Fix Hardcoded Tokens in `community-hub`
+
+Several requests have expired hardcoded JWT tokens. For each affected request: open it → **Authorization** tab → replace the token value with `{{token}}` → **Save**.
+
+Requests to fix: Create Event, Join Event, Withdraw from Event, Update Event, Create Challenge, Join Challenge, Update Progress, Check Challenge Ended (use `{{adminToken}}`).
+
+---
+
+### Step 3: Add Post-Response Test Scripts
+
+For each request below, go to **Scripts → Post-res** and paste the corresponding script.
+
+<details>
+<summary><strong>Collection 1: user-management</strong></summary>
+
+**Login**
+```js
+const response = pm.response.json();
+if (response.token) {
+  pm.environment.set('token', response.token);
+  pm.environment.set('userId', response.user.id);
+  pm.environment.set('RideToken', response.token);
+  pm.environment.set('adminToken', response.token);
+  console.log('Token saved!');
+}
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Response has token", () => {
+  pm.expect(response).to.have.property("token");
+  pm.expect(response.token).to.be.a("string");
+});
+```
+
+**User Register / Admin Register**
+```js
+pm.test("Status is 201 or 409", () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));
+pm.test("If 201, response has token", () => {
+  if (pm.response.code === 201) pm.expect(pm.response.json()).to.have.property("token");
+});
+pm.test("If 409, error message returned", () => {
+  if (pm.response.code === 409) pm.expect(pm.response.json()).to.have.property("error");
+});
+```
+
+**GetProfile**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Response has user data", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("name");
+  pm.expect(r).to.have.property("email");
+});
+```
+</details>
+
+<details>
+<summary><strong>Collection 2: route-planning & discovery</strong></summary>
+
+**create**
+```js
+pm.test("Status is 201", () => pm.response.to.have.status(201));
+pm.test("Response has route data", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("route");
+  pm.expect(r.route).to.have.property("_id");
+  pm.expect(r.route).to.have.property("name");
+  pm.expect(r.route).to.have.property("distance");
+});
+const response = pm.response.json();
+if (response.route?._id) pm.environment.set("routeId", response.route._id);
+```
+
+**getPublicRoutes**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Response has routes array", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("routes");
+  pm.expect(r.routes).to.be.an("array");
+  pm.expect(r).to.have.property("count");
+});
+```
+
+**getOtherPublicRoutes**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("All returned routes are public", () => {
+  pm.response.json().routes.forEach(route => pm.expect(route.isPublic).to.be.true);
+});
+```
+
+**getUserRoutes / getNearbyRoutes** — same pattern as `getPublicRoutes`, check for `routes` array.
+
+**update**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Route was updated", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("route");
+  pm.expect(r.message).to.equal("Route updated successfully");
+});
+```
+
+**delete**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Delete confirmation returned", () => {
+  const r = pm.response.json();
+  pm.expect(r.message).to.equal("Route deleted successfully");
+  pm.expect(r).to.have.property("deletedRouteId");
+});
+```
+
+**AddToFav / RemoveFromFav / getFavRoutes**
+```js
+pm.test("Status is 200 or 201", () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));
+pm.test("Response has message", () => pm.expect(pm.response.json()).to.have.property("message"));
+```
+</details>
+
+<details>
+<summary><strong>Collection 3: ride-and-eco-impact</strong></summary>
+
+**Create a ride**
+```js
+pm.test("Status is 201", () => pm.response.to.have.status(201));
+pm.test("Response has ride data", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("_id");
+  pm.expect(r).to.have.property("distance_km");
+});
+const response = pm.response.json();
+if (response._id) pm.environment.set("rideId", response._id);
+```
+
+**Get all rides / Get Ride by ID / Get a ride by user**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Response is an array or object", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.satisfy(r => Array.isArray(r) || typeof r === "object");
+});
+```
+
+**Update a ride / Delete a ride** — check for status 200 and `message` or `_id` in response.
+
+**EcoImpact endpoints** — check for status 200 and array or object response.
+</details>
+
+<details>
+<summary><strong>Collection 4: community-hub</strong></summary>
+
+**Create Event**
+```js
+pm.test("Status is 201", () => pm.response.to.have.status(201));
+pm.test("Event has expected fields", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("eventId").or.to.have.property("_id");
+});
+const response = pm.response.json();
+const eventId = response.eventId || response._id;
+if (eventId) pm.environment.set("eventId", eventId);
+```
+
+**GET All Events / GET Single Event / GET Participants** — check for status 200 and array or object.
+
+**Join/Withdraw Event, Join Challenge, Update Progress**
+```js
+pm.test("Status is 200", () => pm.response.to.have.status(200));
+pm.test("Response has success message", () => pm.expect(pm.response.json()).to.have.property("message"));
+```
+
+**Create Challenge** — check for status 201 and `title`, `challengeId`, or `_id` in response.
+
+**Get Leaderboard / All Challenges / Single Challenge** — check for status 200 and data.
+
+**Update Event / Delete Event / Check Challenge Ended** — check for status 200 and `message`.
+</details>
+
+<details>
+<summary><strong>Collection 5: hazard-and-feedback</strong></summary>
+
+**Create hazard**
+```js
+pm.test("Status is 201", () => pm.response.to.have.status(201));
+pm.test("Interaction was created", () => {
+  const r = pm.response.json();
+  pm.expect(r).to.have.property("_id");
+  pm.expect(r).to.have.property("intType");
+});
+const response = pm.response.json();
+if (response._id) pm.environment.set("interactionId", response._id);
+```
+
+**Get all interactions / Filter endpoints** — check for status 200 and array or `interactions` object.
+
+**Get interaction by ID** — check for `intType` and `_id` in response.
+
+**Partial Update / Deactivate** — check for status 200 and `_id` or `message`.
+
+**Active Hazards / Get Route Feedback / Trigger expiry job** — check for status 200 and data.
+
+> ⚠️ **Note:** `Create Feedback` uses GET instead of POST — skip until fixed.
+</details>
+
+<details>
+<summary><strong>Collection 6: Notifications</strong></summary>
+
+**Get all / Filter by userId** — check for status 200 and array or `notifications` object.
+
+**Full update notification** — check for status 200 and `_id` in response.
+
+**Delete notification** — check for status 200 and `message` in response.
+</details>
+
+---
+
+### Step 4: Collection Runner — Run Order
+
+Always run **Login first** so the token is available for all other requests.
+
+1. user-management → Login _(saves token, userId, RideToken, adminToken)_
+2. user-management → GetProfile
+3. user-management → Register
+4. route-planning → create _(saves routeId)_
+5. route-planning → getPublicRoutes, getUserRoutes, getOtherPublicRoutes, getNearbyRoutes
+6. route-planning → AddToFav, getFavRoutes, RemoveFromFav
+7. route-planning → update, delete
+8. ride-and-eco-impact → Create a ride _(saves rideId)_
+9. ride-and-eco-impact → Get all rides, Get Ride by ID, Get a ride by user
+10. ride-and-eco-impact → EcoImpact endpoints
+11. ride-and-eco-impact → Update a ride, Delete a ride
+12. hazard-and-feedback → Create hazard _(saves interactionId)_
+13. hazard-and-feedback → All filter/get, Partial Update, Deactivate
+14. community-hub → Create Event _(saves eventId)_
+15. community-hub → All event and challenge endpoints
+16. Notifications → All endpoints
+
+To run: click **⋯** next to a collection → **Run collection** → select your environment → set run order → **Run**. Green = pass, red = fail.
+
+---
+
+### Known Issues
+
+| Issue | Status |
+|---|---|
+| `Check Challenge Ended` returns 404 | Route `/api/community/challenges/:id/check-ended` not implemented on backend |
+| `Create Feedback` uses GET instead of POST | Bug in the collection — skip until fixed |
+
+# Backend API Documentation
+
+This document describes the REST API exposed by the `backend` service of the Cycling Community Website. It covers authentication, route endpoints, request payloads, query parameters, and required environment configuration.
+
+---
+
+## Base Information
+
+- Base URL: `http://localhost:3001/api`
+- Server entrypoint: `backend/server.js`
+- Express app configuration: `backend/app.js`
+- Database: MongoDB
+- Authentication: JWT via `Authorization: Bearer <token>` header
+- Content type:
+  - `application/json` for JSON requests
+  - `multipart/form-data` for interactions with image uploads
+
+---
+
+## Environment Variables
+
+The backend requires the following environment variables in `.env`:
+
+- `MONGODB_URI` - MongoDB connection string
+- `PORT` - HTTP port (example: `3001`)
+- `JWT_SECRET` - secret used to sign JWTs
+- `JWT_EXPIRES_IN` - token lifetime (example: `1d`)
+- `ADMIN_CREATION_SECRET` - admin creation secret
+- `RESEND_API_KEY` - Resend email service API key
+- `MAPBOX_TOKEN` - Mapbox API token for route geometry and geocoding
+- `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - Cloudinary API key
+- `CLOUDINARY_API_SECRET` - Cloudinary API secret
+
+---
+
+## Setup
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+If using production mode:
+
+```bash
+npm start
+```
+
+---
+
+## Authentication
+
+### Register
+
+- URL: `POST /api/users/register`
+- Body:
+  - `name` (string, required)
+  - `email` (string, required)
+  - `password` (string, required)
+- Response: JWT token, user object
+
+### Login
+
+- URL: `POST /api/users/login`
+- Body:
+  - `email` (string, required)
+  - `password` (string, required)
+- Response: JWT token, user object
+
+### Protected endpoints
+
+Protected endpoints require the header:
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+## Users
+
+### Get profile
+
+- URL: `GET /api/users/profile`
+- Auth: required
+- Response: user object
+
+### Get community profile
+
+- URL: `GET /api/users/profile/community`
+- Auth: required
+- Response: community summary and participation statistics for the authenticated user
+
+---
+
+## Routes
+
+### Create a route
+
+- URL: `POST /api/routes/newRoute`
+- Auth: required
+- Body:
+  - `name` (string, required)
+  - `coordinates` (array, required)
+    - Example: `[[lng, lat], [lng, lat], ...]`
+    - Minimum 2 coordinate pairs
+  - `isPublic` (boolean, required)
+- Response: created route object
+
+### Get routes
+
+- URL: `GET /api/routes/viewRoutes`
+- Auth: required
+- Query parameters:
+  - `userId` (string, optional) - filter by user
+  - `isPublic` (boolean as string, optional) - `true` or `false`
+- Notes:
+  - If `userId` is provided and the caller is not the same user, only public routes are returned.
+  - If no `userId` is provided, public routes are returned.
+
+### Get nearby routes
+
+- URL: `GET /api/routes/nearby`
+- Auth: required
+- Query parameters:
+  - `lat` (number, required)
+  - `lng` (number, required)
+  - `radius` (number, optional, meters)
+- Response: public routes near the requested location
+
+### Update a route
+
+- URL: `PUT /api/routes/updateRoute/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+- Body fields (at least one required):
+  - `name` (string)
+  - `coordinates` (array of coordinate pairs)
+  - `isPublic` (boolean)
+- Notes: if coordinates change, the backend refreshes the snapped route geometry via Mapbox
+
+### Delete a route
+
+- URL: `DELETE /api/routes/deleteRoute/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+---
+
+## Rides
+
+### Create a ride
+
+- URL: `POST /api/rides`
+- Auth: required
+- Body:
+  - `distance_km` (number, required)
+  - `duration_minutes` (number, required)
+  - `route_id` (MongoDB ObjectId, optional)
+  - `start_time` (ISO 8601 string, optional)
+  - `end_time` (ISO 8601 string, optional)
+
+### List all rides
+
+- URL: `GET /api/rides`
+- Auth: not required
+- Response: all ride records
+
+### List my rides
+
+- URL: `GET /api/rides/me`
+- Auth: required
+- Response: rides for the authenticated user
+
+### Get my ride stats
+
+- URL: `GET /api/rides/stats/me`
+- Auth: required
+- Response: personal ride statistics
+
+### Get ride by ID
+
+- URL: `GET /api/rides/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+### Update a ride
+
+- URL: `PUT /api/rides/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+- Body fields (at least one required):
+  - `distance_km` (number)
+  - `duration_minutes` (number)
+  - `start_time` (ISO 8601 string)
+  - `end_time` (ISO 8601 string)
+
+### Delete a ride
+
+- URL: `DELETE /api/rides/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+---
+
+## Interactions
+
+### Get interactions
+
+- URL: `GET /api/interactions`
+- Auth: required
+- Query parameters:
+  - `intType` (optional, `hazard` or `feedback`)
+  - `isActive` (optional, `true` or `false`)
+
+### Get active hazards
+
+- URL: `GET /api/interactions/active-hazards`
+- Auth: required
+- Response: active hazard reports with location metadata
+
+### Get route feedback
+
+- URL: `GET /api/interactions/route/:routeId/feedback`
+- Auth: required
+- Path parameters:
+  - `routeId` (MongoDB ObjectId)
+
+### Get interaction by ID
+
+- URL: `GET /api/interactions/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+### Create an interaction
+
+- URL: `POST /api/interactions`
+- Auth: required
+- Content-Type: `multipart/form-data`
+- Fields:
+  - `routeId` (MongoDB ObjectId, optional)
+  - `intType` (string, required) - either `hazard` or `feedback`
+  - `intDescription` (string, optional)
+  - `intRating` (integer 1-5, required for `feedback`)
+  - `severityLevel` (`low`, `medium`, `high`, required for `hazard`)
+  - `intLatitude` (number, optional)
+  - `intLongitude` (number, optional)
+  - `expiryTime` (ISO 8601 string, optional)
+  - `fcmToken` (string, optional)
+  - `image` (file, optional)
+
+### Update an interaction
+
+- URL: `PATCH /api/interactions/:id`
+- Auth: required
+- Content-Type: `multipart/form-data`
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+- Body fields: any subset of the fields used for creation
+
+### Deactivate an interaction
+
+- URL: `PATCH /api/interactions/:id/deactivate`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+### Delete an interaction
+
+- URL: `DELETE /api/interactions/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+---
+
+## Favorites
+
+### Get favorites
+
+- URL: `GET /api/favourites`
+- Auth: required
+- Response: list of favorite routes for the authenticated user
+
+### Add favorite
+
+- URL: `POST /api/favourites/:routeId`
+- Auth: required
+- Path parameters:
+  - `routeId` (MongoDB ObjectId)
+
+### Remove favorite
+
+- URL: `DELETE /api/favourites/:routeId`
+- Auth: required
+- Path parameters:
+  - `routeId` (MongoDB ObjectId)
+
+---
+
+## Notifications
+
+### List notifications
+
+- URL: `GET /api/notifications`
+- Auth: required
+- Query parameters:
+  - `userId` (MongoDB ObjectId, optional)
+
+### Trigger expiry check
+
+- URL: `POST /api/notifications/trigger-expiry-check`
+- Auth: required
+- Notes: manually triggers hazard expiry processing
+
+### Update notification
+
+- URL: `PUT /api/notifications/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+- Body fields (at least one required):
+  - `status` (`sent` or `failed`)
+  - `title` (string)
+  - `body` (string)
+  - `fcmToken` (string)
+
+### Delete notification
+
+- URL: `DELETE /api/notifications/:id`
+- Auth: required
+- Path parameters:
+  - `id` (MongoDB ObjectId)
+
+### Example FCM update route
+
+- URL: `PATCH /api/notifications/update-fcm`
+- Auth: required
+- Body:
+  - `fcmToken` (string)
+- Notes: this route is included as an example backend utility endpoint
+
+---
+
+## Eco Impact
+
+### List all impacts
+
+- URL: `GET /api/impact`
+- Auth: required
+
+### List my impacts
+
+- URL: `GET /api/impact/me`
+- Auth: required
+
+### Get my impact stats
+
+- URL: `GET /api/impact/stats/me`
+- Auth: required
+
+### Get impact by ride
+
+- URL: `GET /api/impact/:rideId`
+- Auth: required
+- Path parameters:
+  - `rideId` (MongoDB ObjectId)
+
+---
+
+## Community Statistics
+
+### Get community stats
+
+- URL: `GET /api/community-stats`
+- Auth: not required
+- Response: aggregated community metrics
+
+---
+
+## Community Events
+
+### Get all community events
+
+- URL: `GET /api/community/events`
+- Auth: not required
+- Query parameters:
+  - `status` (optional)
+
+### Create a community event
+
+- URL: `POST /api/community/events`
+- Auth: required
+- Admin only
+- Body:
+  - `title` (string, required)
+  - `description` (string, optional)
+  - `location` (string, required)
+  - `eventDate` (ISO 8601 string, required)
+  - `eventTime` (string, required)
+  - `maxParticipants` (number, required)
+
+### Get community event by ID
+
+- URL: `GET /api/community/events/:id`
+- Auth: not required
+- Path parameters:
+  - `id` (string)
+
+### Get event participants
+
+- URL: `GET /api/community/events/:id/participants`
+- Auth: not required
+- Path parameters:
+  - `id` (string)
+
+### Join a community event
+
+- URL: `POST /api/community/events/:id/join`
+- Auth: required
+- Path parameters:
+  - `id` (string)
+
+### Withdraw from a community event
+
+- URL: `POST /api/community/events/:id/withdraw`
+- Auth: required
+- Path parameters:
+  - `id` (string)
+
+### Update community event
+
+- URL: `PATCH /api/community/events/:id`
+- Auth: required
+- Admin only
+- Path parameters:
+  - `id` (string)
+- Body: any event fields to update
+
+### Delete community event
+
+- URL: `DELETE /api/community/events/:id`
+- Auth: required
+- Admin only
+- Path parameters:
+  - `id` (string)
+
+---
+
+## Community Challenges
+
+### Get all community challenges
+
+- URL: `GET /api/community/challenges`
+- Auth: not required
+- Query parameters:
+  - `status` (optional)
+
+### Create a community challenge
+
+- URL: `POST /api/community/challenges`
+- Auth: required
+- Admin only
+- Body:
+  - `title` (string, required)
+  - `description` (string, optional)
+  - `targetDistance` (number, required)
+  - `startDate` (ISO 8601 string, required)
+  - `endDate` (ISO 8601 string, required)
+
+### Get challenge by ID
+
+- URL: `GET /api/community/challenges/:id`
+- Auth: not required
+- Path parameters:
+  - `id` (string)
+
+### Get challenge participants
+
+- URL: `GET /api/community/challenges/:id/participants`
+- Auth: not required
+- Path parameters:
+  - `id` (string)
+
+### Get challenge leaderboard
+
+- URL: `GET /api/community/challenges/:id/leaderboard`
+- Auth: not required
+- Path parameters:
+  - `id` (string)
+
+### Join a challenge
+
+- URL: `POST /api/community/challenges/:id/join`
+- Auth: required
+- Path parameters:
+  - `id` (string)
+
+### Update challenge progress
+
+- URL: `PUT /api/community/challenges/:id/progress`
+- Auth: required
+- Path parameters:
+  - `id` (string)
+- Body:
+  - `distance` (number, required)
+
+### Check challenge ended
+
+- URL: `POST /api/community/challenges/:id/check-ended`
+- Auth: required
+- Admin only
+- Path parameters:
+  - `id` (string)
+
+### Get user participation history
+
+- URL: `GET /api/community/challenges/user/:userId`
+- Auth: required
+- Path parameters:
+  - `userId` (MongoDB ObjectId)
+
+---
+
+## Error handling
+
+Common HTTP status codes returned by the API:
+
+- `200` - success
+- `201` - created
+- `400` - validation or request error
+- `401` - authentication required or invalid token
+- `403` - access denied
+- `404` - resource not found
+- `500` - server error
+
+Validation failures return a JSON body with an `errors` array.
+
+---
+
+## Notes
+
+- The backend schedules monthly email jobs when `NODE_ENV !== 'test'`.
+- The hazard expiry job is started after MongoDB connects.
+- Several routes require admin privileges via JWT claims.
+- Interaction image uploads use `multipart/form-data` with field name `image`.
